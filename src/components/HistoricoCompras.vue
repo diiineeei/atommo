@@ -1,15 +1,27 @@
 <template>
   <v-container class="py-8">
-    <h1 class="text-h4 font-weight-bold mb-6">Histórico de Compras</h1>
+    <div class="d-flex align-center justify-space-between mb-6">
+      <h1 class="text-h4 font-weight-bold">Histórico de Compras</h1>
+      <div class="d-flex align-center" style="gap: 8px;">
+        <v-btn variant="tonal" color="blue" :loading="loading" @click="reload">
+          Recarregar
+        </v-btn>
+        <v-btn variant="text" color="blue" :loading="syncLoading" @click="syncPendentes" v-if="temPendentes">
+          Enviar pendentes
+        </v-btn>
+      </div>
+    </div>
 
     <v-alert
-      v-if="!compras.length"
+      v-if="!compras.length && !loading"
       type="info"
       variant="tonal"
       class="mb-6"
     >
       Você ainda não possui compras realizadas.
     </v-alert>
+
+    <v-progress-linear v-if="loading" indeterminate color="blue" class="mb-4" />
 
     <v-expansion-panels v-else multiple>
       <v-expansion-panel v-for="pedido in compras" :key="pedido.id">
@@ -68,7 +80,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { produtosAppStore } from '@/store/app'
 import { useRouter } from 'vue-router'
 
@@ -76,6 +88,9 @@ const store = produtosAppStore()
 const router = useRouter()
 
 const compras = computed(()=> store.user?.compras || [])
+const temPendentes = computed(()=> (compras.value || []).some(c => c?.pendenteSync))
+const loading = ref(false)
+const syncLoading = ref(false)
 
 function formatCurrency(v){
   const n = Number(v || 0)
@@ -94,8 +109,28 @@ function upper(v){ return String(v || '').toUpperCase() }
 function voltarCompras(){
   router.push({ name: 'Produtos2' })
 }
+
+async function reload(){
+  try{
+    loading.value = true
+    await store.carregarHistorico?.()
+  } finally {
+    loading.value = false
+  }
+}
+
+async function syncPendentes(){
+  try{
+    syncLoading.value = true
+    await store.sincronizarComprasPendentes?.()
+    await store.carregarHistorico?.()
+  } finally {
+    syncLoading.value = false
+  }
+}
+
+onMounted(()=>{ reload() })
 </script>
 
 <style scoped>
 </style>
-

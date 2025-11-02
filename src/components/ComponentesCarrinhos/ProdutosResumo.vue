@@ -71,7 +71,7 @@ async function onFinalizarCompra(){
   if(carrinhoVazio.value) return
   try{
     loading.value = true
-    const res = await store.finalizarCompra?.({ salvarRemoto: false })
+    const res = await store.finalizarCompra?.()
     if(res?.ok){
       router.push({ name: 'Historico' })
     }

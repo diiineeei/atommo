@@ -21,6 +21,37 @@ export const produtosAppStore = defineStore('products', () => {
     }
   }
 
+  function normalizeItem(raw){
+    const i = raw || {}
+    return {
+      id: i.ID ?? i.id ?? i.cartId ?? undefined,
+      nome: i.nome ?? i.productnome ?? i.name ?? '',
+      valor: Number(i.valor ?? i.preco ?? i.price ?? 0),
+      quantidade: Number(i.quantidade ?? i.qtd ?? i.quantity ?? 0),
+      imagemURL: i.imagemURL ?? i.productimagemURL ?? i.imageUrl ?? undefined,
+      codigoDeBarras: i.codigoDeBarras ?? i.barcode ?? i.ean ?? undefined,
+    }
+  }
+
+  function normalizePedido(raw){
+    const p = raw || {}
+    const itens = Array.isArray(p.itens) ? p.itens.map(normalizeItem) : []
+    const quantidadeItens = p.quantidadeItens ?? itens.reduce((a,i)=> a + Number(i.quantidade||0), 0)
+    const total = p.total ?? itens.reduce((a,i)=> a + Number(i.valor||0) * Number(i.quantidade||0), 0)
+    return {
+      id: p.id ?? p.ID ?? p.numero ?? `${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+      criadoEm: p.criadoEm ?? p.createdAt ?? p.data ?? new Date().toISOString(),
+      total,
+      quantidadeItens,
+      pagamento: p.pagamento || {
+        metodo: p.metodoPagamento || 'pix',
+        parcelas: p.parcelas || 1,
+      },
+      itens,
+      pendenteSync: !!p.pendenteSync,
+    }
+  }
+
   function saveSession(){
     try{
       const payload = {
@@ -43,6 +74,9 @@ export const produtosAppStore = defineStore('products', () => {
       user.value.token = saved?.token || ''
       user.value.compras = Array.isArray(saved?.compras) ? saved.compras : []
       applyAuthHeader(user.value.token)
+      // tenta sincronizar compras pendentes assim que sessão é restaurada
+      // sem await para não bloquear
+      setTimeout(() => { try{ sincronizarComprasPendentes() }catch(_){} }, 0)
     }catch(e){ /* noop */ }
   }
 
@@ -72,7 +106,55 @@ export const produtosAppStore = defineStore('products', () => {
     }
   }
 
-  // Finaliza a compra atual e persiste no histórico do usuário
+  // Carrega histórico de compras da API e mescla com pendentes locais
+  async function carregarHistorico(){
+    try{
+      const { data } = await axios.get('http://localhost:8080/api/compras')
+      // suporta respostas em vários formatos
+      const lista = Array.isArray(data?.compras) ? data.compras : (Array.isArray(data) ? data : [])
+      const normalizados = lista.map(normalizePedido)
+
+      // mantem pendentes locais não enviados
+      const pendentes = (user.value.compras || []).filter(c => c?.pendenteSync)
+
+      // dedup por id (pendentes primeiro)
+      const mapa = new Map()
+      for(const p of [...pendentes, ...normalizados]){
+        if(!mapa.has(p.id)) mapa.set(p.id, p)
+      }
+      user.value.compras = Array.from(mapa.values())
+      saveSession()
+      return { ok: true, total: user.value.compras.length }
+    }catch(error){
+      console.error('Erro ao carregar histórico:', error)
+      return { ok: false, error }
+    }
+  }
+
+  // Tenta reenviar compras pendentes
+  async function sincronizarComprasPendentes(){
+    const pendentes = (user.value.compras || []).filter(c => c?.pendenteSync)
+    if(!pendentes.length) return { ok: true, reenviadas: 0 }
+    let sucesso = 0
+    for(const pedido of pendentes){
+      try{
+        const { data } = await axios.post('http://localhost:8080/api/compras', pedido)
+        const normalizado = normalizePedido(data || pedido)
+        // substitui na lista atual
+        const idx = user.value.compras.findIndex(c => c.id === pedido.id)
+        if(idx >= 0){
+          user.value.compras[idx] = { ...normalizado, pendenteSync: false }
+        }
+        sucesso++
+      }catch(_e){
+        // mantém como pendente
+      }
+    }
+    saveSession()
+    return { ok: true, reenviadas: sucesso }
+  }
+
+  // Finaliza a compra atual, envia para API, e persiste no histórico
   async function finalizarCompra(opcoes = {}){
     const itens = (productsCar.value || []).map(p => ({
       id: p.ID ?? p.id ?? p.cartId ?? undefined,
@@ -101,24 +183,25 @@ export const produtosAppStore = defineStore('products', () => {
       itens,
     }
 
-    // Tenta salvar remotamente (opcional). Ignora falhas silenciosamente.
+    // Tenta salvar remotamente sempre
+    let persistido = null
     try{
-      if(opcoes?.salvarRemoto){
-        await axios.post('http://localhost:8080/api/compras', pedido)
-      }
+      const { data } = await axios.post('http://localhost:8080/api/compras', pedido)
+      persistido = normalizePedido(data || pedido)
+      persistido.pendenteSync = false
     }catch(e){
-      // noop: mantemos local mesmo assim
-      console.warn('Falha ao salvar compra remotamente, mantendo apenas localmente.')
+      console.warn('Falha ao salvar compra remotamente, marcando como pendente.')
+      persistido = { ...normalizePedido(pedido), pendenteSync: true }
     }
 
     user.value.compras = Array.isArray(user.value.compras) ? user.value.compras : []
-    user.value.compras.unshift(pedido) // mais recente primeiro
+    user.value.compras.unshift(persistido) // mais recente primeiro
     saveSession()
 
     // Limpa carrinho
     productsCar.value = []
 
-    return { ok: true, pedido }
+    return { ok: true, pedido: persistido }
   }
 
   // Inicialização da Store
@@ -126,5 +209,5 @@ export const produtosAppStore = defineStore('products', () => {
   // Carrega produtos após restaurar sessão (se houver)
   loadProducts();
 
-  return { products, productsCar, user, loadProducts, loadSession, clearSession, finalizarCompra }; // Retorne também a função loadProducts se necessário
+  return { products, productsCar, user, loadProducts, loadSession, clearSession, finalizarCompra, carregarHistorico, sincronizarComprasPendentes }; // Retorne também a função loadProducts se necessário
 });
