@@ -41,6 +41,8 @@ import AppBar from '@/layouts/default/AppBar.vue'
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding-top: calc(var(--app-header-height, 96px) + 32px);
+  padding-top: var(--app-header-height, 96px);
+  min-height: 100vh;
+  background-color: #f5f5f5;
 }
 </style>

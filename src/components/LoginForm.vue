@@ -1,15 +1,15 @@
 <template>
 
-  <v-row class="loginRow ma-0">
+  <v-row class="loginRow ma-0 pa-0">
     <v-col
       md="8"
       sm="6"
       cols="1"
-      class="h-100 justify-center align-center d-none d-sm-flex"
+      class="h-100 justify-center align-center d-none d-sm-flex pa-0"
     >
       <v-img src="@/assets/LoginImg.svg" class="w-75 h-75"></v-img>
     </v-col>
-    <v-col cols="12" md="4" sm="6" class="bg-blue-accent-2 h-100">
+    <v-col cols="12" md="4" sm="6" class="bg-blue-accent-2 h-100 login-right pa-0">
       <v-container class="h-100 form-wrapper">
         <v-container class="h-25 justify-center align-start d-flex">
           <img src="@/assets/logo-simples-h.png" :width="300"/>
@@ -154,13 +154,21 @@ async function doLogin(){
 
 <style scoped>
 .loginRow {
-  width: 100vw;
-  height: 95vh;
+  width: 100%;
+  min-height: calc(100vh - var(--app-header-height, 96px));
+  align-items: stretch;
 }
 .form-wrapper {
   width: 90%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-
+.login-right{
+  min-height: calc(100vh - var(--app-header-height, 96px));
+  padding: 0 !important;
+}
 
 </style>
