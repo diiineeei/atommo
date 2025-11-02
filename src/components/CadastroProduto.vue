@@ -29,6 +29,7 @@
                 label="Selecionar imagem"
                 accept="image/*"
                 prepend-icon="mdi-image"
+                v-model="dadosProduto.imagem"
                 @change="onUploadImagem"
               ></v-file-input>
 
@@ -49,7 +50,9 @@
                 v-model="dadosProduto.codigoDeBarras"
                 variant="outlined"
                 label="Código de barras"
-                type="number"
+                hint="Use apenas números; zeros à esquerda serão preservados"
+                persistent-hint
+                type="text"
               />
 
               <v-text-field
@@ -58,6 +61,13 @@
                 label="Preço"
                 type="number"
                 :rules="validacaoPreco"
+              />
+
+              <v-switch
+                class="mt-2"
+                color="blue-accent-2"
+                v-model="dadosProduto.emEstoque"
+                :label="`Em estoque: ${dadosProduto.emEstoque ? 'Sim' : 'Não'}`"
               />
 
               <div class="d-flex flex-wrap gap-4 mt-4">
@@ -87,11 +97,12 @@ import axios from 'axios'
 const DEFAULT_PLACEHOLDER = 'https://cdn.vuetifyjs.com/images/parallax/material.jpg'
 
 const dadosProduto = ref({
-    nome: '',
-    valor: '',
-    descricao: '',
-    codigoDeBarras: '',
-    imagem: null
+  nome: '',
+  valor: '',
+  descricao: '',
+  codigoDeBarras: '',
+  emEstoque: true,
+  imagem: null,
 })
 
 const formValido = ref(false)
@@ -112,51 +123,41 @@ const validacaoPreco = ref([
 ])
 
 
-function onCriarProduto(){
+async function onCriarProduto() {
+  try {
+    const { nome, valor, descricao, imagem, codigoDeBarras, emEstoque } = dadosProduto.value
 
-  const {nome, valor, descricao, imagem, codigoDeBarras} = dadosProduto.value
+    const formData = new FormData()
+    // campo de arquivo — mantém como 'imagem' pois o backend já trata
+    if (imagem) formData.append('imagem', imagem)
+    // usa chaves com capitalização esperada pelo backend
+    formData.append('Nome', String(nome || ''))
+    formData.append('Valor', String(Number(valor || 0)))
+    formData.append('Descricao', String(descricao || ''))
+    // mantém como texto para não perder zeros à esquerda
+    formData.append('CodigoDeBarras', String(codigoDeBarras || ''))
+    formData.append('EmEstoque', String(!!emEstoque))
 
-
-  const formData = new FormData()
-  formData.append('imagem', imagem)
-  formData.append('nome', nome)
-  formData.append('valor', Number(valor))
-  formData.append('descricao', descricao)
-  formData.append('codigoDeBarras', codigoDeBarras)
-
-  axios.post('http://localhost:8080/api/upload', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  })
-    .then((response) => {
-      // Aqui você pode tratar a resposta do servidor
-      // ...
+    await axios.post('http://localhost:8080/api/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
     })
-    .catch((error) => {
-      // Aqui você pode tratar o erro da requisição
-      // ...
-    });
-
-    // store.products.push({
-    //     nome: nome,
-    //     valor: Number(valor),
-    //     descricao: descricao,
-    //     imagem: image,
-    //     // ID: Date.now()
-    // })
-
     onLimpar()
-
+  } catch (error) {
+    console.error('Falha ao cadastrar produto:', error)
+  }
 }
 function onLimpar(){
     form.value.reset()
     imagemPreview.value = DEFAULT_PLACEHOLDER
 }
 
-function onUploadImagem(e) {
-  const file = e.target?.files?.[0]
-  dadosProduto.value.imagem = file || null
+function onUploadImagem(payload) {
+  // Suporta tanto evento quanto File ou File[] direto
+  let file = null
+  if (payload instanceof File) file = payload
+  else if (Array.isArray(payload)) file = payload[0] || null
+  else file = payload?.target?.files?.[0] || null
+  dadosProduto.value.imagem = file
 
   if (!file) {
     imagemPreview.value = DEFAULT_PLACEHOLDER
@@ -164,11 +165,9 @@ function onUploadImagem(e) {
   }
 
   const reader = new FileReader()
-
   reader.onload = (event) => {
     imagemPreview.value = event.target?.result || DEFAULT_PLACEHOLDER
   }
-
   reader.readAsDataURL(file)
 }
 
