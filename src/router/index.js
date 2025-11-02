@@ -28,6 +28,11 @@ const routes = [
         component: () => import('@/views/CarrinhoCompras.vue'),
       },
       {
+        path: 'historico',
+        name: 'Historico',
+        component: () => import('@/views/HistoricoScreen.vue'),
+      },
+      {
         path: 'login',
         name: 'Login',
         component: () => import('@/views/LoginScreen.vue'),

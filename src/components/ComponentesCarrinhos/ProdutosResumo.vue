@@ -23,15 +23,24 @@
                 (Economize <b class="font-weight-bold">{{ installmentsvalor }}</b>)
             </p>
        </div>
-       <v-btn size="large" block color="blue">IR PARA O PAGAMENTO</v-btn>
-       <v-btn size="large" block variant="outlined" color="blue">CONTINUAR COMPRANDO</v-btn>
+       <v-btn size="large" block color="blue" @click="onFinalizarCompra" :loading="loading" :disabled="loading || carrinhoVazio">
+        FINALIZAR COMPRA
+       </v-btn>
+       <v-btn size="large" block variant="outlined" color="blue" @click="irParaProdutos">
+        CONTINUAR COMPRANDO
+       </v-btn>
     </v-container>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import {produtosAppStore} from '@/store/app'
+import { useRouter } from 'vue-router'
 const store = produtosAppStore()
+const router = useRouter()
+const loading = ref(false)
+
+const carrinhoVazio = computed(()=> (store.productsCar || []).length === 0)
 
 const fullvalor = computed(() => {
     const value = store.productsCar.reduce((total, produtoAtual) => total + produtoAtual.valor * produtoAtual.quantity, 0);
@@ -57,6 +66,23 @@ const installmentsvalor = computed(() => {
         currency: 'BRL'
     })
 })
+
+async function onFinalizarCompra(){
+  if(carrinhoVazio.value) return
+  try{
+    loading.value = true
+    const res = await store.finalizarCompra?.({ salvarRemoto: false })
+    if(res?.ok){
+      router.push({ name: 'Historico' })
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+function irParaProdutos(){
+  router.push({ name: 'Produtos2' })
+}
 </script>
 
 <style  scoped>

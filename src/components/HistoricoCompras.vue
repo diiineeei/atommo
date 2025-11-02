@@ -1,0 +1,101 @@
+<template>
+  <v-container class="py-8">
+    <h1 class="text-h4 font-weight-bold mb-6">Histórico de Compras</h1>
+
+    <v-alert
+      v-if="!compras.length"
+      type="info"
+      variant="tonal"
+      class="mb-6"
+    >
+      Você ainda não possui compras realizadas.
+    </v-alert>
+
+    <v-expansion-panels v-else multiple>
+      <v-expansion-panel v-for="pedido in compras" :key="pedido.id">
+        <v-expansion-panel-title>
+          <div class="w-100 d-flex align-center justify-space-between">
+            <div class="d-flex flex-column">
+              <span class="text-subtitle-1 font-weight-medium">Pedido #{{ pedido.id }}</span>
+              <span class="text-caption text-medium-emphasis">{{ formatDate(pedido.criadoEm) }}</span>
+            </div>
+            <div class="text-right">
+              <div class="text-subtitle-1 font-weight-bold">{{ formatCurrency(pedido.total) }}</div>
+              <div class="text-caption text-medium-emphasis">{{ pedido.quantidadeItens }} itens • {{ upper(pedido.pagamento?.metodo) }}</div>
+            </div>
+          </div>
+        </v-expansion-panel-title>
+        <v-expansion-panel-text>
+          <v-table density="comfortable">
+            <thead>
+              <tr>
+                <th class="text-left">Produto</th>
+                <th class="text-left">Qtde</th>
+                <th class="text-left">Valor</th>
+                <th class="text-left">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in pedido.itens" :key="item.id || item.nome">
+                <td>
+                  <div class="d-flex align-center" style="gap: 12px;">
+                    <v-avatar size="40" v-if="item.imagemURL">
+                      <v-img :src="item.imagemURL" alt="img" />
+                    </v-avatar>
+                    <div class="d-flex flex-column">
+                      <span class="font-weight-medium">{{ item.nome }}</span>
+                      <span class="text-caption text-medium-emphasis" v-if="item.codigoDeBarras">EAN: {{ item.codigoDeBarras }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>{{ item.quantidade }}</td>
+                <td>{{ formatCurrency(item.valor) }}</td>
+                <td>{{ formatCurrency(Number(item.valor||0) * Number(item.quantidade||0)) }}</td>
+              </tr>
+            </tbody>
+          </v-table>
+          <div class="d-flex justify-end mt-4">
+            <div class="text-subtitle-1"><b>Total:</b> {{ formatCurrency(pedido.total) }}</div>
+          </div>
+        </v-expansion-panel-text>
+      </v-expansion-panel>
+    </v-expansion-panels>
+
+    <div class="mt-6">
+      <v-btn color="blue" @click="voltarCompras" prepend-icon="mdi-arrow-left">Voltar aos produtos</v-btn>
+    </div>
+  </v-container>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+import { produtosAppStore } from '@/store/app'
+import { useRouter } from 'vue-router'
+
+const store = produtosAppStore()
+const router = useRouter()
+
+const compras = computed(()=> store.user?.compras || [])
+
+function formatCurrency(v){
+  const n = Number(v || 0)
+  return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+function formatDate(iso){
+  try{
+    const d = new Date(iso)
+    return d.toLocaleString('pt-BR')
+  }catch(_){ return iso }
+}
+
+function upper(v){ return String(v || '').toUpperCase() }
+
+function voltarCompras(){
+  router.push({ name: 'Produtos2' })
+}
+</script>
+
+<style scoped>
+</style>
+

@@ -67,6 +67,10 @@ const pages = computed(() => [
     to: { name: 'Produtos2' },
   },
   {
+    title: 'Histórico',
+    to: { name: 'Historico' },
+  },
+  {
     title: 'Cadastro',
     to: { name: 'Cadastro' },
   },
