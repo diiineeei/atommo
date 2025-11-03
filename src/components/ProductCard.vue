@@ -25,7 +25,9 @@
           <v-progress-circular   indeterminate></v-progress-circular>
           </v-container>
           <v-card-subtitle>{{card.productnome }}</v-card-subtitle>
-          <v-card-title class="product-title">R$ {{ card.productvalor }}</v-card-title>
+          <v-card-title class="product-title">
+            <span class="price-green">{{ formatCurrency(card.productvalor) }}</span>
+          </v-card-title>
           <v-card-text class="product-desc">{{ card.productDesc }}</v-card-text>
           <v-card-actions class="product-actions">
             <v-btn block color="blue-accent-3"  variant="elevated"
@@ -47,6 +49,15 @@
 
     function onEdit(){ emit('edit', card) }
     function onDelete(){ emit('delete', card) }
+
+    function formatCurrency(v){
+      const n = Number(v || 0)
+      try{
+        return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      }catch(_){
+        return `R$ ${n.toFixed(2).replace('.', ',')}`
+      }
+    }
 
       const card = defineProps({
           "productnome": String,
@@ -99,5 +110,10 @@
     -webkit-line-clamp: 3;
     overflow: hidden;
     min-height: 66px; /* ~3 linhas */
+  }
+
+  .price-green{
+    color: #16a34a; /* verde */
+    font-weight: 700;
   }
     </style>

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import axios from 'axios'; // Importe o Axios
 
 export const produtosAppStore = defineStore('products', () => {
@@ -10,8 +10,11 @@ export const produtosAppStore = defineStore('products', () => {
     name: '',
     email: '',
     token: '',
+    nivelAcesso: 'vendedor',
     compras: []
   });
+  const users = ref([])
+  const isAdmin = computed(() => String(user.value.nivelAcesso || '').toLowerCase() === 'admin')
 
   function applyAuthHeader(token){
     if (token) {
@@ -58,6 +61,7 @@ export const produtosAppStore = defineStore('products', () => {
         name: user.value.name || '',
         email: user.value.email || '',
         token: user.value.token || '',
+        nivelAcesso: user.value.nivelAcesso || 'vendedor',
         compras: Array.isArray(user.value.compras) ? user.value.compras : []
       }
       localStorage.setItem('app.auth', JSON.stringify(payload))
@@ -72,6 +76,7 @@ export const produtosAppStore = defineStore('products', () => {
       user.value.name = saved?.name || ''
       user.value.email = saved?.email || ''
       user.value.token = saved?.token || ''
+      user.value.nivelAcesso = saved?.nivelAcesso || 'vendedor'
       user.value.compras = Array.isArray(saved?.compras) ? saved.compras : []
       applyAuthHeader(user.value.token)
       // tenta sincronizar compras pendentes assim que sessão é restaurada
@@ -84,6 +89,7 @@ export const produtosAppStore = defineStore('products', () => {
     user.value.name = ''
     user.value.email = ''
     user.value.token = ''
+    user.value.nivelAcesso = 'vendedor'
     try{ localStorage.removeItem('app.auth') }catch(e){ /* noop */ }
     applyAuthHeader('')
   }
@@ -248,10 +254,73 @@ export const produtosAppStore = defineStore('products', () => {
     return { ok: true, pedido: persistido }
   }
 
+  // Gestão de usuários (somente admin)
+  async function listarUsuarios(params = {}){
+    try{
+      const { page = 1, limit = 20 } = params
+      const { data, headers } = await axios.get('http://localhost:8080/api/users', { params: { page, limit } })
+      users.value = Array.isArray(data) ? data : (Array.isArray(data?.users) ? data.users : [])
+      const total = Number(headers?.['x-total-count'] || headers?.['X-Total-Count'] || users.value.length)
+      return { ok: true, total, users: users.value }
+    }catch(error){
+      console.error('Erro ao listar usuários:', error)
+      return { ok: false, error }
+    }
+  }
+
+  async function criarUsuario(payload){
+    try{
+      const permitidos = ['name','email','password','nivelAcesso']
+      const body = {}
+      for(const k of permitidos){ if(Object.prototype.hasOwnProperty.call(payload, k)) body[k] = payload[k] }
+      const { data } = await axios.post('http://localhost:8080/api/users', body, { headers: { 'Content-Type': 'application/json' } })
+      if(data){ users.value.unshift(data) }
+      return { ok: true, user: data }
+    }catch(error){
+      console.error('Erro ao criar usuário:', error)
+      return { ok: false, error }
+    }
+  }
+
+  async function atualizarUsuario(id, patch = {}){
+    try{
+      if(id == null) throw new Error('id_invalido')
+      const permitidos = ['name','email','password','nivelAcesso']
+      const body = {}
+      for(const k of permitidos){ if(Object.prototype.hasOwnProperty.call(patch, k)) body[k] = patch[k] }
+      const { data } = await axios.patch(`http://localhost:8080/api/users/${id}`, body, { headers: { 'Content-Type': 'application/json' } })
+      const idx = users.value.findIndex(u => (u?.ID ?? u?.id) === id)
+      if(idx >= 0){ users.value[idx] = { ...users.value[idx], ...data } }
+      return { ok: true, user: data }
+    }catch(error){
+      console.error('Erro ao atualizar usuário:', error)
+      return { ok: false, error }
+    }
+  }
+
+  async function deletarUsuario(id){
+    try{
+      if(id == null) throw new Error('id_invalido')
+      const res = await axios.delete(`http://localhost:8080/api/users/${id}`)
+      if(res?.status === 204 || res?.status === 200){
+        users.value = users.value.filter(u => (u?.ID ?? u?.id) !== id)
+        return { ok: true }
+      }
+      return { ok: false, status: res?.status }
+    }catch(error){
+      if(error?.response?.status === 404){
+        users.value = users.value.filter(u => (u?.ID ?? u?.id) !== id)
+        return { ok: false, notFound: true }
+      }
+      console.error('Erro ao deletar usuário:', error)
+      return { ok: false, error }
+    }
+  }
+
   // Inicialização da Store
   loadSession();
   // Carrega produtos após restaurar sessão (se houver)
   loadProducts();
 
-  return { products, productsCar, user, loadProducts, loadSession, clearSession, finalizarCompra, carregarHistorico, sincronizarComprasPendentes, atualizarProduto, deletarProduto }; // Retorne também a função loadProducts se necessário
+  return { products, productsCar, user, users, isAdmin, loadProducts, loadSession, clearSession, finalizarCompra, carregarHistorico, sincronizarComprasPendentes, atualizarProduto, deletarProduto, listarUsuarios, criarUsuario, atualizarUsuario, deletarUsuario }; // Retorne também a função loadProducts se necessário
 });

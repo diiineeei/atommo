@@ -38,6 +38,11 @@ const routes = [
         name: 'Login',
         component: () => import('@/views/LoginScreen.vue'),
       },
+      {
+        path: 'usuarios',
+        name: 'Usuarios',
+        component: () => import('@/views/UsuariosScreen.vue'),
+      },
       // {
       //   path: '/produtos',
       //   name: 'Produtos',
@@ -102,6 +107,10 @@ router.beforeEach((to) => {
     return { name: 'Login', query: { redirect: to.fullPath } }
   }
   if (isAuthenticated && to.name === 'Login') {
+    return { name: 'Produtos2' }
+  }
+  // protege rota de administração
+  if (to.name === 'Usuarios' && !store.isAdmin) {
     return { name: 'Produtos2' }
   }
   return true

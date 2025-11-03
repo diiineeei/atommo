@@ -61,27 +61,19 @@ const router = useRouter()
 
 const isLoggedIn = computed(() => !!userStore.token)
 
-const pages = computed(() => [
-  {
-    title: 'Products',
-    to: { name: 'Produtos2' },
-  },
-  {
-    title: 'Histórico',
-    to: { name: 'Historico' },
-  },
-  {
-    title: 'Cadastro',
-    to: { name: 'Cadastro' },
-  },
-  {
-    title: 'Carrinho',
-    to: { name: 'Carrinho' },
-  },
-  isLoggedIn.value
-    ? { title: 'Logout', action: 'logout' }
-    : { title: 'Login', to: { name: 'Login' } },
-])
+const pages = computed(() => {
+  const base = [
+    { title: 'Products', to: { name: 'Produtos2' } },
+    { title: 'Histórico', to: { name: 'Historico' } },
+    { title: 'Cadastro', to: { name: 'Cadastro' } },
+    { title: 'Carrinho', to: { name: 'Carrinho' } },
+  ]
+  if (store.isAdmin) {
+    base.splice(2, 0, { title: 'Usuários', to: { name: 'Usuarios' } })
+  }
+  base.push(isLoggedIn.value ? { title: 'Logout', action: 'logout' } : { title: 'Login', to: { name: 'Login' } })
+  return base
+})
 
 function onLogout(){
   store.clearSession?.()

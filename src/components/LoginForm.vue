@@ -137,9 +137,17 @@ async function doLogin(){
       .replace(/\./g,' ')
       .replace(/(^|\s)\w/g, s => s.toUpperCase())
     const name = data?.user?.name || data?.name || derivedName || email
+    // tenta identificar nível de acesso (admin/vendedor)
+    let nivelAcesso = data?.user?.nivelAcesso || data?.nivelAcesso || payload?.nivelAcesso || payload?.role || ''
+    if (!nivelAcesso) {
+      if (payload?.isAdmin === true) nivelAcesso = 'admin'
+      else nivelAcesso = 'vendedor'
+    }
 
     userStore.name = name
     userStore.email = email
+    // defina nivelAcesso antes do token para salvar na sessão junto com o token
+    userStore.nivelAcesso = String(nivelAcesso || 'vendedor')
     userStore.token = token
 
     const redirect = route.query?.redirect || '/produtos'

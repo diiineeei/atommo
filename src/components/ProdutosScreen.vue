@@ -49,7 +49,7 @@
       :productvalor="product.valor"
       :productDesc="product.descricao"
       :productimagemURL="product.imagemURL"
-      :showActions="true"
+      :showActions="store.isAdmin"
       @edit="abrirEdicao(product)"
       @delete="confirmarExclusao(product)"
       @add-to-cart="onAddToCart(product)"
