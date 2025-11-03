@@ -34,7 +34,7 @@
         <span class="scanner-last">Último código: <strong>{{ ultimoCodigo }}</strong></span>
       </div>
       <div class="scanner-right" v-else>
-        <span class="scanner-last">Aproxime o leitor e bip o produto</span>
+        <span class="scanner-last">Aproxime o leitor do produto</span>
       </div>
       <v-snackbar v-model="snackbar" timeout="2200" :color="snackbarColor" location="top right">
         {{ snackbarText }}
@@ -49,6 +49,9 @@
       :productvalor="product.valor"
       :productDesc="product.descricao"
       :productimagemURL="product.imagemURL"
+      :showActions="true"
+      @edit="abrirEdicao(product)"
+      @delete="confirmarExclusao(product)"
       @add-to-cart="onAddToCart(product)"
     />
   </section>
@@ -63,11 +66,35 @@
 </div>
 
 </div>
+
+  <!-- Dialog de edição -->
+  <EditarProdutoDialog
+    v-model="edicaoAberta"
+    :produto="produtoEditando"
+    @salvo="onProdutoSalvo"
+  />
+
+  <!-- Confirmação de exclusão -->
+  <v-dialog v-model="excluirAberta" max-width="480">
+    <v-card>
+      <v-card-title class="text-h6">Excluir produto</v-card-title>
+      <v-card-text>
+        Tem certeza que deseja excluir "{{ produtoExcluindo?.nome }}"?
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn variant="text" @click="excluirAberta = false">Cancelar</v-btn>
+        <v-btn color="error" :loading="excluindo" @click="excluirProduto">Excluir</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
 </template>
 
 
 <script setup>
 import  ProductCard  from './ProductCard.vue'
+import EditarProdutoDialog from './EditarProdutoDialog.vue'
 import CarrinhoCompras from './CarrinhoSideBar.vue';
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { produtosAppStore } from '@/store/app'
@@ -91,6 +118,41 @@ const filteredProducts = computed(() => {
     (p?.descricao ?? '').toLowerCase().includes(term)
   )
 })
+
+// Edição/Exclusão de produtos
+const edicaoAberta = ref(false)
+const produtoEditando = ref(null)
+const excluirAberta = ref(false)
+const produtoExcluindo = ref(null)
+const excluindo = ref(false)
+
+function abrirEdicao(produto){
+  produtoEditando.value = produto
+  edicaoAberta.value = true
+}
+
+function onProdutoSalvo(){
+  notificar('Produto atualizado', 'success')
+}
+
+function confirmarExclusao(produto){
+  produtoExcluindo.value = produto
+  excluirAberta.value = true
+}
+
+async function excluirProduto(){
+  try{
+    excluindo.value = true
+    const id = produtoExcluindo.value?.ID ?? produtoExcluindo.value?.id
+    const { ok, notFound } = await store.deletarProduto(id)
+    if(ok || notFound){
+      notificar('Produto excluído', 'success')
+    }
+  } finally {
+    excluindo.value = false
+    excluirAberta.value = false
+  }
+}
 
 let buffer = ''
 let lastKeyTs = 0

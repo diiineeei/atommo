@@ -5,6 +5,18 @@
         :elevation="isHovering ? 15 : 5"
         close-delay        v-bind="props"
         >
+          <div v-if="showActions" class="card-actions">
+            <v-tooltip text="Editar">
+              <template #activator="{ props: tip }">
+                <v-btn size="28" icon="mdi-pencil" variant="tonal" color="blue" v-bind="tip" @click.stop="onEdit"></v-btn>
+              </template>
+            </v-tooltip>
+            <v-tooltip text="Excluir">
+              <template #activator="{ props: tip }">
+                <v-btn size="28" icon="mdi-delete" variant="tonal" color="error" v-bind="tip" @click.stop="onDelete"></v-btn>
+              </template>
+            </v-tooltip>
+          </div>
           <v-img v-if="card.productimagemURL"
             :src="card.productimagemURL ? card.productimagemURL : 'https://storage.googleapis.com/proudcity/mebanenc/uploads/2021/03/placeholder-image.png'"
             height="200px"
@@ -26,18 +38,22 @@
 
     <script setup>
 
-    const emit = defineEmits(["add-to-cart"])
+    const emit = defineEmits(["add-to-cart","edit","delete"])
 
 
     function addToCart() {
       emit("add-to-cart", card)
     }
 
+    function onEdit(){ emit('edit', card) }
+    function onDelete(){ emit('delete', card) }
+
       const card = defineProps({
           "productnome": String,
           "productvalor": Number,
           "productDesc": String,
           "productimagemURL": String,
+          showActions: { type: Boolean, default: false },
       })
     </script>
 
@@ -57,6 +73,15 @@
   /* Mantém o botão sempre no rodapé do card */
   .product-actions{
     margin-top: auto;
+  }
+
+  .card-actions{
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 6px;
+    z-index: 2;
   }
 
   /* Melhora consistência de altura e truncamento */

@@ -131,6 +131,50 @@ export const produtosAppStore = defineStore('products', () => {
     }
   }
 
+  // Atualiza um produto via PATCH e reflete na lista local
+  async function atualizarProduto(id, patch = {}){
+    try{
+      if(id == null) throw new Error('id_invalido')
+      // filtra apenas campos aceitos pelo backend
+      const permitidos = ['nome','descricao','valor','emEstoque','imagemURL','codigoDeBarras']
+      const payload = {}
+      for(const k of permitidos){
+        if (Object.prototype.hasOwnProperty.call(patch, k)) payload[k] = patch[k]
+      }
+      const { data } = await axios.patch(`http://localhost:8080/api/produtos/${id}`, payload)
+      // Atualiza item na lista local
+      const pid = data?.ID ?? id
+      const idx = products.value.findIndex(p => (p?.ID ?? p?.id) === pid)
+      if(idx >= 0){
+        products.value[idx] = { ...products.value[idx], ...data }
+      }
+      return { ok: true, produto: data }
+    }catch(error){
+      console.error('Erro ao atualizar produto:', error)
+      return { ok: false, error }
+    }
+  }
+
+  // Deleta um produto e remove da lista local
+  async function deletarProduto(id){
+    try{
+      if(id == null) throw new Error('id_invalido')
+      const res = await axios.delete(`http://localhost:8080/api/produtos/${id}`)
+      if(res?.status === 204 || res?.status === 200){
+        products.value = products.value.filter(p => (p?.ID ?? p?.id) !== id)
+        return { ok: true }
+      }
+      return { ok: false, status: res?.status }
+    }catch(error){
+      if(error?.response?.status === 404){
+        products.value = products.value.filter(p => (p?.ID ?? p?.id) !== id)
+        return { ok: false, notFound: true }
+      }
+      console.error('Erro ao deletar produto:', error)
+      return { ok: false, error }
+    }
+  }
+
   // Tenta reenviar compras pendentes
   async function sincronizarComprasPendentes(){
     const pendentes = (user.value.compras || []).filter(c => c?.pendenteSync)
@@ -209,5 +253,5 @@ export const produtosAppStore = defineStore('products', () => {
   // Carrega produtos após restaurar sessão (se houver)
   loadProducts();
 
-  return { products, productsCar, user, loadProducts, loadSession, clearSession, finalizarCompra, carregarHistorico, sincronizarComprasPendentes }; // Retorne também a função loadProducts se necessário
+  return { products, productsCar, user, loadProducts, loadSession, clearSession, finalizarCompra, carregarHistorico, sincronizarComprasPendentes, atualizarProduto, deletarProduto }; // Retorne também a função loadProducts se necessário
 });

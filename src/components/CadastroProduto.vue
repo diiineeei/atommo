@@ -7,18 +7,21 @@
             Cadastro de produtos
           </v-card-title>
           <v-card-text>
-            <v-row class="mb-6" justify="center">
-              <v-col cols="12" class="d-flex justify-center">
-                <v-img
-                  class="preview-image"
-                  :width="260"
-                  max-width="320"
-                  aspect-ratio="16/9"
-                  cover
-                  :src="imagemPreview"
-                ></v-img>
-              </v-col>
-            </v-row>
+              <v-row class="mb-6" justify="center">
+                <v-col cols="12" class="d-flex justify-center">
+                  <v-img
+                    class="preview-image clickable"
+                    :width="260"
+                    max-width="320"
+                    aspect-ratio="16/9"
+                    cover
+                    :src="imagemPreview"
+                    role="button"
+                    alt="Pré-visualização da imagem do produto"
+                    @click="abrirSeletorImagem"
+                  ></v-img>
+                </v-col>
+              </v-row>
 
             <v-form
               ref="form"
@@ -29,6 +32,7 @@
                 label="Selecionar imagem"
                 accept="image/*"
                 prepend-icon="mdi-image"
+                ref="fileInputRef"
                 v-model="dadosProduto.imagem"
                 @change="onUploadImagem"
               ></v-file-input>
@@ -110,6 +114,7 @@ const formValido = ref(false)
 const form = ref(null)
 
 const imagemPreview = ref(DEFAULT_PLACEHOLDER)
+const fileInputRef = ref(null)
 
 
 const validacaoNome = ref([
@@ -171,6 +176,15 @@ function onUploadImagem(payload) {
   reader.readAsDataURL(file)
 }
 
+function abrirSeletorImagem() {
+  // Tenta acionar o input interno do v-file-input
+  const el = fileInputRef?.value?.$el?.querySelector('input[type="file"]')
+  if (el) {
+    el.click()
+    return
+  }
+}
+
 </script>
 
 <style scoped>
@@ -182,6 +196,10 @@ function onUploadImagem(payload) {
 .preview-image {
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+}
+
+.preview-image.clickable{
+  cursor: pointer;
 }
 
 .gap-4 {
