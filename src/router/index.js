@@ -91,6 +91,14 @@ function installAuthInterceptor() {
             setTimeout(() => { prompting = false }, 1500)
           }
         }
+        if (status === 403) {
+          // Acesso negado — perfil insuficiente (provável vendedor tentando rota de admin)
+          try { alert('Acesso negado. É necessário perfil administrador.') } catch (_) {}
+          const current = router.currentRoute.value
+          if (current?.name === 'Usuarios' || current?.name === 'Cadastro') {
+            router.replace({ name: 'Produtos2' })
+          }
+        }
       } catch (_) { /* noop */ }
       return Promise.reject(error)
     }
@@ -111,6 +119,9 @@ router.beforeEach((to) => {
   }
   // protege rota de administração
   if (to.name === 'Usuarios' && !store.isAdmin) {
+    return { name: 'Produtos2' }
+  }
+  if (to.name === 'Cadastro' && !store.isAdmin) {
     return { name: 'Produtos2' }
   }
   return true
