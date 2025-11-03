@@ -108,7 +108,7 @@ async function doLogin(){
   }
   try{
     loading.value = true
-    const { data } = await axios.post('http://localhost:8080/api/signin', {
+    const { data } = await axios.post('https://app-lojinha-990926851328.us-central1.run.app/api/signin', {
       email,
       password
     }, {

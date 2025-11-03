@@ -143,7 +143,7 @@ async function onCriarProduto() {
     formData.append('CodigoDeBarras', String(codigoDeBarras || ''))
     formData.append('EmEstoque', String(!!emEstoque))
 
-    await axios.post('http://localhost:8080/api/upload', formData, {
+    await axios.post('https://app-lojinha-990926851328.us-central1.run.app/api/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
     onLimpar()

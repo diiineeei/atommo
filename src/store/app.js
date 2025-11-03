@@ -103,7 +103,7 @@ export const produtosAppStore = defineStore('products', () => {
   // Função para carregar produtos da API
   async function loadProducts() {
     try {
-      const response = await axios.get('http://localhost:8080/api/lista/produtos');
+      const response = await axios.get('https://app-lojinha-990926851328.us-central1.run.app/api/lista/produtos');
       // const response = await axios.get('https://app-lojinha-vielkaxmma-uc.a.run.app/api/lista/produtos');
       products.value = response.data;
     } catch (error) {
@@ -115,7 +115,7 @@ export const produtosAppStore = defineStore('products', () => {
   // Carrega histórico de compras da API e mescla com pendentes locais
   async function carregarHistorico(){
     try{
-      const { data } = await axios.get('http://localhost:8080/api/compras')
+      const { data } = await axios.get('https://app-lojinha-990926851328.us-central1.run.app/api/compras')
       // suporta respostas em vários formatos
       const lista = Array.isArray(data?.compras) ? data.compras : (Array.isArray(data) ? data : [])
       const normalizados = lista.map(normalizePedido)
@@ -147,7 +147,7 @@ export const produtosAppStore = defineStore('products', () => {
       for(const k of permitidos){
         if (Object.prototype.hasOwnProperty.call(patch, k)) payload[k] = patch[k]
       }
-      const { data } = await axios.patch(`http://localhost:8080/api/produtos/${id}`, payload)
+      const { data } = await axios.patch(`https://app-lojinha-990926851328.us-central1.run.app/api/produtos/${id}`, payload)
       // Atualiza item na lista local
       const pid = data?.ID ?? id
       const idx = products.value.findIndex(p => (p?.ID ?? p?.id) === pid)
@@ -165,7 +165,7 @@ export const produtosAppStore = defineStore('products', () => {
   async function deletarProduto(id){
     try{
       if(id == null) throw new Error('id_invalido')
-      const res = await axios.delete(`http://localhost:8080/api/produtos/${id}`)
+      const res = await axios.delete(`https://app-lojinha-990926851328.us-central1.run.app/api/produtos/${id}`)
       if(res?.status === 204 || res?.status === 200){
         products.value = products.value.filter(p => (p?.ID ?? p?.id) !== id)
         return { ok: true }
@@ -188,7 +188,7 @@ export const produtosAppStore = defineStore('products', () => {
     let sucesso = 0
     for(const pedido of pendentes){
       try{
-        const { data } = await axios.post('http://localhost:8080/api/compras', pedido)
+        const { data } = await axios.post('https://app-lojinha-990926851328.us-central1.run.app/api/compras', pedido)
         const normalizado = normalizePedido(data || pedido)
         // substitui na lista atual
         const idx = user.value.compras.findIndex(c => c.id === pedido.id)
@@ -236,7 +236,7 @@ export const produtosAppStore = defineStore('products', () => {
     // Tenta salvar remotamente sempre
     let persistido = null
     try{
-      const { data } = await axios.post('http://localhost:8080/api/compras', pedido)
+      const { data } = await axios.post('https://app-lojinha-990926851328.us-central1.run.app/api/compras', pedido)
       persistido = normalizePedido(data || pedido)
       persistido.pendenteSync = false
     }catch(e){
@@ -258,7 +258,7 @@ export const produtosAppStore = defineStore('products', () => {
   async function listarUsuarios(params = {}){
     try{
       const { page = 1, limit = 20 } = params
-      const { data, headers } = await axios.get('http://localhost:8080/api/users', { params: { page, limit } })
+      const { data, headers } = await axios.get('https://app-lojinha-990926851328.us-central1.run.app/api/users', { params: { page, limit } })
       users.value = Array.isArray(data) ? data : (Array.isArray(data?.users) ? data.users : [])
       const total = Number(headers?.['x-total-count'] || headers?.['X-Total-Count'] || users.value.length)
       return { ok: true, total, users: users.value }
@@ -273,7 +273,7 @@ export const produtosAppStore = defineStore('products', () => {
       const permitidos = ['name','email','password','nivelAcesso']
       const body = {}
       for(const k of permitidos){ if(Object.prototype.hasOwnProperty.call(payload, k)) body[k] = payload[k] }
-      const { data } = await axios.post('http://localhost:8080/api/users', body, { headers: { 'Content-Type': 'application/json' } })
+      const { data } = await axios.post('https://app-lojinha-990926851328.us-central1.run.app/api/users', body, { headers: { 'Content-Type': 'application/json' } })
       if(data){ users.value.unshift(data) }
       return { ok: true, user: data }
     }catch(error){
@@ -288,7 +288,7 @@ export const produtosAppStore = defineStore('products', () => {
       const permitidos = ['name','email','password','nivelAcesso']
       const body = {}
       for(const k of permitidos){ if(Object.prototype.hasOwnProperty.call(patch, k)) body[k] = patch[k] }
-      const { data } = await axios.patch(`http://localhost:8080/api/users/${id}`, body, { headers: { 'Content-Type': 'application/json' } })
+      const { data } = await axios.patch(`https://app-lojinha-990926851328.us-central1.run.app/api/users/${id}`, body, { headers: { 'Content-Type': 'application/json' } })
       const idx = users.value.findIndex(u => (u?.ID ?? u?.id) === id)
       if(idx >= 0){ users.value[idx] = { ...users.value[idx], ...data } }
       return { ok: true, user: data }
@@ -301,7 +301,7 @@ export const produtosAppStore = defineStore('products', () => {
   async function deletarUsuario(id){
     try{
       if(id == null) throw new Error('id_invalido')
-      const res = await axios.delete(`http://localhost:8080/api/users/${id}`)
+      const res = await axios.delete(`https://app-lojinha-990926851328.us-central1.run.app/api/users/${id}`)
       if(res?.status === 204 || res?.status === 200){
         users.value = users.value.filter(u => (u?.ID ?? u?.id) !== id)
         return { ok: true }

@@ -36,7 +36,7 @@ $ npm install
 $ npm run serve
 ```
 
-After executing these commands, the Adega do Vilão Store application will be up and running. You can access it by opening your web browser and navigating to `http://localhost:8080` (or the port displayed in the terminal).
+After executing these commands, the Adega do Vilão Store application will be up and running. You can access it by opening your web browser and navigating to `https://app-lojinha-990926851328.us-central1.run.app` (or the port displayed in the terminal).
 
 
 ## Technologies Used
@@ -47,6 +47,7 @@ The Adega do Vilão Store project utilizes the following technologies:
 - [Vue.js 3.0](https://vuejs.org) : A progressive JavaScript framework for building user interfaces.
 - [Vuetify](https://vuetifyjs.com/en/) : A Material Design component framework for Vue.js to create elegant and responsive UI components.
 - [Pinia](https://pinia.vuejs.org) : A state management library for Vue.js applications.
+
 
 
 

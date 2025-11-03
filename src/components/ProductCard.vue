@@ -39,7 +39,6 @@
     </template>
 
     <script setup>
-
     const emit = defineEmits(["add-to-cart","edit","delete"])
 
 
@@ -66,6 +65,7 @@
           "productimagemURL": String,
           showActions: { type: Boolean, default: false },
       })
+    
     </script>
 
     <style>
