@@ -43,6 +43,11 @@ const routes = [
         name: 'Usuarios',
         component: () => import('@/views/UsuariosScreen.vue'),
       },
+      {
+        path: 'config',
+        name: 'ConfigEmpresa',
+        component: () => import('@/views/ConfigEmpresaScreen.vue'),
+      },
       // {
       //   path: '/produtos',
       //   name: 'Produtos',
@@ -122,6 +127,9 @@ router.beforeEach((to) => {
     return { name: 'Produtos2' }
   }
   if (to.name === 'Cadastro' && !store.isAdmin) {
+    return { name: 'Produtos2' }
+  }
+  if (to.name === 'ConfigEmpresa' && !store.isAdmin) {
     return { name: 'Produtos2' }
   }
   return true

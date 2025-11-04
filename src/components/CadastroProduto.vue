@@ -67,6 +67,21 @@
                 :rules="validacaoPreco"
               />
 
+              <v-text-field
+                v-model="dadosProduto.precoVenda"
+                variant="outlined"
+                label="Preço de venda (opcional)"
+                type="number"
+                :hint="precoSugerido > 0 ? `Sugerido: R$ ${precoSugerido.toFixed(2)}` : 'Defina o preço de venda ou usaremos o aumento sugerido da empresa.'"
+                persistent-hint
+              >
+                <template #append>
+                  <v-btn size="small" variant="text" @click="usarPrecoSugerido" :disabled="precoSugerido <= 0">
+                    Usar sugerido
+                  </v-btn>
+                </template>
+              </v-text-field>
+
               <v-switch
                 class="mt-2"
                 color="blue-accent-2"
@@ -95,8 +110,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
+import { produtosAppStore } from '@/store/app'
 
 const DEFAULT_PLACEHOLDER = 'https://cdn.vuetifyjs.com/images/parallax/material.jpg'
 
@@ -107,6 +123,7 @@ const dadosProduto = ref({
   codigoDeBarras: '',
   emEstoque: true,
   imagem: null,
+  precoVenda: '',
 })
 
 const formValido = ref(false)
@@ -142,6 +159,13 @@ async function onCriarProduto() {
     // mantém como texto para não perder zeros à esquerda
     formData.append('CodigoDeBarras', String(codigoDeBarras || ''))
     formData.append('EmEstoque', String(!!emEstoque))
+    // preço de venda opcional
+    const pv = Number(dadosProduto.value.precoVenda || 0)
+    if (!isNaN(pv) && pv > 0) {
+      formData.append('PrecoVenda', String(pv))
+      // também inclui camelCase para compatibilidade
+      formData.append('precoVenda', String(pv))
+    }
 
     await axios.post('https://app-lojinha-990926851328.us-central1.run.app/api/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -184,6 +208,27 @@ function abrirSeletorImagem() {
     return
   }
 }
+
+// Config da empresa e preço sugerido
+const store = produtosAppStore()
+const precoSugerido = computed(() => {
+  const base = Number(dadosProduto.value.valor || 0)
+  const pct = Number(store.empresaConfig?.porcentagemAumentoSugerido || 0)
+  if (!base || isNaN(base)) return 0
+  const v = base * (1 + (isNaN(pct) ? 0 : pct)/100)
+  return Math.round(v * 100) / 100
+})
+
+function usarPrecoSugerido(){
+  if(precoSugerido.value > 0){
+    dadosProduto.value.precoVenda = String(precoSugerido.value)
+  }
+}
+
+onMounted(() => {
+  // Tenta carregar config caso ainda não esteja na store
+  try{ store.carregarConfigEmpresa() }catch(_){ /* noop */ }
+})
 
 </script>
 

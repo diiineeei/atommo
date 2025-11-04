@@ -5,6 +5,11 @@ import axios from 'axios'; // Importe o Axios
 export const produtosAppStore = defineStore('products', () => {
   const products = ref([]); // Inicialmente vazio
   const productsCar = ref([]);
+  const empresaConfig = ref({
+    taxaMaquininha: 0,
+    opcoesPagamento: ['pix', 'cartao', 'dinheiro', 'boleto'],
+    porcentagemAumentoSugerido: 0,
+  })
 
   const user = ref({
     name: '',
@@ -142,7 +147,7 @@ export const produtosAppStore = defineStore('products', () => {
     try{
       if(id == null) throw new Error('id_invalido')
       // filtra apenas campos aceitos pelo backend
-      const permitidos = ['nome','descricao','valor','emEstoque','imagemURL','codigoDeBarras']
+      const permitidos = ['nome','descricao','valor','emEstoque','imagemURL','codigoDeBarras','precoVenda']
       const payload = {}
       for(const k of permitidos){
         if (Object.prototype.hasOwnProperty.call(patch, k)) payload[k] = patch[k]
@@ -157,6 +162,39 @@ export const produtosAppStore = defineStore('products', () => {
       return { ok: true, produto: data }
     }catch(error){
       console.error('Erro ao atualizar produto:', error)
+      return { ok: false, error }
+    }
+  }
+
+  // Configurações da empresa (admin)
+  async function carregarConfigEmpresa(){
+    try{
+      const { data } = await axios.get('https://app-lojinha-990926851328.us-central1.run.app/api/config/empresa')
+      if (data && typeof data === 'object') {
+        empresaConfig.value = {
+          taxaMaquininha: Number(data.taxaMaquininha ?? 0),
+          opcoesPagamento: Array.isArray(data.opcoesPagamento) ? data.opcoesPagamento : ['pix','cartao','dinheiro','boleto'],
+          porcentagemAumentoSugerido: Number(data.porcentagemAumentoSugerido ?? 0),
+        }
+      }
+      return { ok: true, config: empresaConfig.value }
+    } catch (error) {
+      console.error('Erro ao carregar config da empresa:', error)
+      return { ok: false, error }
+    }
+  }
+
+  async function salvarConfigEmpresa(patch = {}){
+    try{
+      const permitidos = ['taxaMaquininha','opcoesPagamento','porcentagemAumentoSugerido']
+      const body = {}
+      for(const k of permitidos){ if(Object.prototype.hasOwnProperty.call(patch, k)) body[k] = patch[k] }
+      const { data } = await axios.patch('https://app-lojinha-990926851328.us-central1.run.app/api/config/empresa', body, { headers: { 'Content-Type': 'application/json' } })
+      // Atualiza store com retorno
+      await carregarConfigEmpresa()
+      return { ok: true, config: data }
+    } catch (error) {
+      console.error('Erro ao salvar config da empresa:', error)
       return { ok: false, error }
     }
   }
@@ -322,5 +360,5 @@ export const produtosAppStore = defineStore('products', () => {
   // Carrega produtos após restaurar sessão (se houver)
   loadProducts();
 
-  return { products, productsCar, user, users, isAdmin, loadProducts, loadSession, clearSession, finalizarCompra, carregarHistorico, sincronizarComprasPendentes, atualizarProduto, deletarProduto, listarUsuarios, criarUsuario, atualizarUsuario, deletarUsuario }; // Retorne também a função loadProducts se necessário
+  return { products, productsCar, user, users, isAdmin, empresaConfig, loadProducts, loadSession, clearSession, finalizarCompra, carregarHistorico, sincronizarComprasPendentes, atualizarProduto, deletarProduto, listarUsuarios, criarUsuario, atualizarUsuario, deletarUsuario, carregarConfigEmpresa, salvarConfigEmpresa }; // Retorne também a função loadProducts se necessário
 });

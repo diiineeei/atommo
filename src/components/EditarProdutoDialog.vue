@@ -7,6 +7,7 @@
           <v-text-field v-model="edit.nome" label="Nome" variant="outlined" class="mb-3" />
           <v-textarea v-model="edit.descricao" label="Descrição" variant="outlined" rows="2" class="mb-3" />
           <v-text-field v-model.number="edit.valor" label="Valor" variant="outlined" type="number" class="mb-3" />
+          <v-text-field v-model.number="edit.precoVenda" label="Preço de venda (opcional)" variant="outlined" type="number" class="mb-3" />
           <v-text-field v-model="edit.codigoDeBarras" label="Código de barras" variant="outlined" class="mb-3" />
           <v-text-field v-model="edit.imagemURL" label="Imagem (nome do arquivo, ex: 20251102040421.png)" variant="outlined" class="mb-3" />
           <v-switch v-model="edit.emEstoque" :label="`Em estoque: ${edit.emEstoque ? 'Sim' : 'Não'}`" color="blue-accent-2" inset />
@@ -44,6 +45,7 @@ const edit = reactive({
   nome: '',
   descricao: '',
   valor: 0,
+  precoVenda: 0,
   emEstoque: true,
   codigoDeBarras: '',
   imagemURL: '',
@@ -55,6 +57,7 @@ watch(() => props.produto, (p) => {
   edit.nome = prod.nome || ''
   edit.descricao = prod.descricao || ''
   edit.valor = Number(prod.valor || 0)
+  edit.precoVenda = Number(prod.precoVenda || 0)
   edit.emEstoque = !!(prod.emEstoque ?? true)
   edit.codigoDeBarras = prod.codigoDeBarras || ''
   // imagemURL do backend pode vir com URL completa; se quiser enviar somente o arquivo, o backend aceita o nome
@@ -75,6 +78,7 @@ async function onSalvar(){
       nome: edit.nome,
       descricao: edit.descricao,
       valor: Number(edit.valor || 0),
+      precoVenda: Number(edit.precoVenda || 0) || undefined,
       emEstoque: !!edit.emEstoque,
       codigoDeBarras: edit.codigoDeBarras,
       imagemURL: edit.imagemURL || undefined,
@@ -92,4 +96,3 @@ async function onSalvar(){
 
 <style scoped>
 </style>
-

@@ -70,6 +70,7 @@ const pages = computed(() => {
   if (store.isAdmin) {
     base.splice(2, 0, { title: 'Cadastro', to: { name: 'Cadastro' } })
     base.splice(3, 0, { title: 'Usuários', to: { name: 'Usuarios' } })
+    base.splice(4, 0, { title: 'Config', to: { name: 'ConfigEmpresa' } })
   }
   base.push(isLoggedIn.value ? { title: 'Logout', action: 'logout' } : { title: 'Login', to: { name: 'Login' } })
   return base
