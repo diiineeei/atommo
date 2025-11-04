@@ -15,9 +15,9 @@
           <img src="@/assets/logo-simples-h.png" :width="300"/>
         </v-container>
         <v-container class="pa-0 my-5">
-          <p class="text-h5 font-weight-medium">Welcome to Vue online Grocery Store</p>
+          <p class="text-h5 font-weight-medium">Bem Vindo a Adega do Vilão</p>
           <p class="text-subtitle-1">
-            Sign in to your account and carry on with your shopping!
+            Acesse sua conta e faça muitas vendas!
           </p>
         </v-container>
         <v-form @submit.prevent="doLogin" ref="form">
@@ -49,7 +49,7 @@
           <div class="d-flex align-center justify-space-between">
           <v-checkbox
           color="black"
-          label="Remember"
+          label="Lembrar usuario"
           hide-details="auto"
           ></v-checkbox>
             <a
@@ -58,10 +58,10 @@
               rel="noopener noreferrer"
               target="_blank"
             >
-              Forgot login password?</a
+              Esqueceu sua senha?</a
             >
           </div>
-          <v-btn color="black"  block type="submit" :loading="loading" :disabled="loading">LOGIN</v-btn>
+          <v-btn color="black"  block type="submit" :loading="loading" :disabled="loading">Entrar</v-btn>
         </v-form>
       </v-container>
     </v-col>

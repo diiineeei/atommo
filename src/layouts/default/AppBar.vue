@@ -72,7 +72,7 @@ const pages = computed(() => {
     base.splice(3, 0, { title: 'Usuários', to: { name: 'Usuarios' } })
     base.splice(4, 0, { title: 'Admin', to: { name: 'ConfigEmpresa' } })
   }
-  base.push(isLoggedIn.value ? { title: 'Sair', action: 'logout' } : { title: 'Login', to: { name: 'Login' } })
+  base.push(isLoggedIn.value ? { title: 'Sair', action: 'logout' } : { title: 'Entrar', to: { name: 'Login' } })
   return base
 })
 
