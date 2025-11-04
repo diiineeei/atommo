@@ -39,6 +39,7 @@ export const produtosAppStore = defineStore('products', () => {
       quantidade: Number(i.quantidade ?? i.qtd ?? i.quantity ?? 0),
       imagemURL: i.imagemURL ?? i.productimagemURL ?? i.imageUrl ?? undefined,
       codigoDeBarras: i.codigoDeBarras ?? i.barcode ?? i.ean ?? undefined,
+      proprietarioId: i.proprietarioId ?? i.ProprietarioID ?? i.proprietarioID ?? i.proprietario_id ?? null,
     }
   }
 
@@ -267,6 +268,7 @@ export const produtosAppStore = defineStore('products', () => {
       quantidade: p.quantity,
       imagemURL: p.imagemURL ?? p.productimagemURL ?? undefined,
       codigoDeBarras: p.codigoDeBarras ?? undefined,
+      proprietarioId: p.proprietarioId ?? p.ProprietarioID ?? p.proprietarioID ?? p.proprietario_id ?? null,
     }))
 
     if(!itens.length){
