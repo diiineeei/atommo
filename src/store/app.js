@@ -46,6 +46,13 @@ export const produtosAppStore = defineStore('products', () => {
     const itens = Array.isArray(p.itens) ? p.itens.map(normalizeItem) : []
     const quantidadeItens = p.quantidadeItens ?? itens.reduce((a,i)=> a + Number(i.quantidade||0), 0)
     const total = p.total ?? itens.reduce((a,i)=> a + Number(i.valor||0) * Number(i.quantidade||0), 0)
+    const pagamentos = Array.isArray(p.pagamentos)
+      ? p.pagamentos.map((pg) => ({
+          metodo: pg?.metodo ?? pg?.method ?? 'pix',
+          parcelas: Number(pg?.parcelas ?? 1),
+          valor: Number(pg?.valor ?? 0),
+        }))
+      : undefined
     return {
       id: p.id ?? p.ID ?? p.numero ?? `${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
       criadoEm: p.criadoEm ?? p.createdAt ?? p.data ?? new Date().toISOString(),
@@ -55,6 +62,7 @@ export const produtosAppStore = defineStore('products', () => {
         metodo: p.metodoPagamento || 'pix',
         parcelas: p.parcelas || 1,
       },
+      pagamentos,
       itens,
       pendenteSync: !!p.pendenteSync,
     }
@@ -264,11 +272,30 @@ export const produtosAppStore = defineStore('products', () => {
       criadoEm: agora.toISOString(),
       total,
       quantidadeItens: itens.reduce((a,i)=> a + Number(i.quantidade||0), 0),
+      // suporte a múltiplos pagamentos: se opcoes.pagamentos for array >= 1, enviaremos ambos os campos
+      // para compatibilidade com backend (pagamento legado e pagamentos[])
       pagamento: {
         metodo: opcoes.metodoPagamento || 'pix',
         parcelas: opcoes.parcelas || 1,
       },
       itens,
+    }
+
+    if (Array.isArray(opcoes.pagamentos) && opcoes.pagamentos.length > 0) {
+      // normaliza pagamentos enviados pela tela
+      const normalized = opcoes.pagamentos.map(pg => ({
+        metodo: pg?.metodo || 'pix',
+        parcelas: Number(pg?.parcelas ?? 1),
+        valor: Number(pg?.valor ?? 0),
+      }))
+      pedido.pagamentos = normalized
+      if (normalized.length === 1) {
+        // espelha no campo legado quando apenas 1 pagamento
+        pedido.pagamento = { metodo: normalized[0].metodo, parcelas: normalized[0].parcelas }
+      } else {
+        // multi pagamentos: campo legado vira marcador
+        pedido.pagamento = { metodo: 'multi', parcelas: 0 }
+      }
     }
 
     // Tenta salvar remotamente sempre

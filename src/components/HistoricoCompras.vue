@@ -33,7 +33,7 @@
             </div>
             <div class="text-right">
               <div class="text-subtitle-1 font-weight-bold">{{ formatCurrency(pedido.total) }}</div>
-              <div class="text-caption text-medium-emphasis">{{ pedido.quantidadeItens }} itens • {{ upper(pedido.pagamento?.metodo) }}</div>
+              <div class="text-caption text-medium-emphasis">{{ pedido.quantidadeItens }} itens • {{ metodoResumo(pedido) }}</div>
             </div>
           </div>
         </v-expansion-panel-title>
@@ -66,8 +66,16 @@
               </tr>
             </tbody>
           </v-table>
-          <div class="d-flex justify-end mt-4">
+          <div class="d-flex justify-space-between mt-4 align-start" style="gap: 16px;">
             <div class="text-subtitle-1"><b>Total:</b> {{ formatCurrency(pedido.total) }}</div>
+            <div v-if="Array.isArray(pedido.pagamentos) && pedido.pagamentos.length" class="text-subtitle-2">
+              <div class="mb-1"><b>Pagamentos:</b></div>
+              <div v-for="(pg, i) in pedido.pagamentos" :key="i" class="text-medium-emphasis">
+                • {{ upper(pg.metodo) }}
+                <span v-if="pg.metodo === 'cartao' && Number(pg.parcelas||0) > 1"> ({{ Number(pg.parcelas) }}x)</span>
+                <span v-if="pg.valor != null"> — {{ formatCurrency(pg.valor) }}</span>
+              </div>
+            </div>
           </div>
         </v-expansion-panel-text>
       </v-expansion-panel>
@@ -105,6 +113,14 @@ function formatDate(iso){
 }
 
 function upper(v){ return String(v || '').toUpperCase() }
+
+function metodoResumo(p){
+  try{
+    if (Array.isArray(p?.pagamentos) && p.pagamentos.length > 1) return 'MULTI'
+    const m = p?.pagamento?.metodo || (Array.isArray(p?.pagamentos) && p.pagamentos[0]?.metodo) || ''
+    return upper(m)
+  }catch(_){ return '' }
+}
 
 function voltarCompras(){
   router.push({ name: 'Produtos2' })
