@@ -63,16 +63,16 @@ const isLoggedIn = computed(() => !!userStore.token)
 
 const pages = computed(() => {
   const base = [
-    { title: 'Products', to: { name: 'Produtos2' } },
+    { title: 'Produtos', to: { name: 'Produtos2' } },
     { title: 'Histórico', to: { name: 'Historico' } },
     { title: 'Carrinho', to: { name: 'Carrinho' } },
   ]
   if (store.isAdmin) {
-    base.splice(2, 0, { title: 'Cadastro', to: { name: 'Cadastro' } })
+    base.splice(2, 0, { title: 'Cadastrar', to: { name: 'Cadastro' } })
     base.splice(3, 0, { title: 'Usuários', to: { name: 'Usuarios' } })
-    base.splice(4, 0, { title: 'Config', to: { name: 'ConfigEmpresa' } })
+    base.splice(4, 0, { title: 'Admin', to: { name: 'ConfigEmpresa' } })
   }
-  base.push(isLoggedIn.value ? { title: 'Logout', action: 'logout' } : { title: 'Login', to: { name: 'Login' } })
+  base.push(isLoggedIn.value ? { title: 'Sair', action: 'logout' } : { title: 'Login', to: { name: 'Login' } })
   return base
 })
 

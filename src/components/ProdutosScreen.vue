@@ -30,11 +30,19 @@
           class="scanner-search-input"
         />
       </div>
-      <div class="scanner-right" v-if="ultimoCodigo">
-        <span class="scanner-last">Último código: <strong>{{ ultimoCodigo }}</strong></span>
-      </div>
-      <div class="scanner-right" v-else>
-        <span class="scanner-last">Aproxime o leitor do produto</span>
+      <div class="scanner-right">
+        <span class="scanner-last">
+          <template v-if="ultimoCodigo">Último código: <strong>{{ ultimoCodigo }}</strong></template>
+          <template v-else>Aproxime o leitor do produto</template>
+        </span>
+        <v-btn
+          variant="outlined"
+          color="blue-accent-2"
+          prepend-icon="mdi-refresh"
+          :loading="recarregando"
+          :disabled="recarregando"
+          @click="recarregarProdutos"
+        >Atualizar</v-btn>
       </div>
       <v-snackbar v-model="snackbar" timeout="2200" :color="snackbarColor" location="top right">
         {{ snackbarText }}
@@ -107,6 +115,20 @@ const ultimoCodigo = ref('')
 const snackbar = ref(false)
 const snackbarText = ref('')
 const snackbarColor = ref('success')
+
+// Atualização manual de produtos
+const recarregando = ref(false)
+async function recarregarProdutos(){
+  try{
+    recarregando.value = true
+    await store.loadProducts?.()
+    notificar('Produtos atualizados', 'success')
+  } catch (e) {
+    notificar('Falha ao atualizar produtos', 'error')
+  } finally {
+    recarregando.value = false
+  }
+}
 
 // Search filter by name
 const filtroNome = ref('')
@@ -320,6 +342,13 @@ function onAddToCart(product) {
 
 .scanner-last{
   color: #334155;
+}
+
+.scanner-right{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .scanner-search{
