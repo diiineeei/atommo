@@ -1,9 +1,33 @@
 <template>
   <v-container class="py-8">
-    <div class="d-flex align-center justify-space-between mb-6">
+    <div class="d-flex align-center justify-space-between mb-6 flex-wrap" style="gap: 12px;">
       <h1 class="text-h4 font-weight-bold">Histórico de Compras</h1>
-      <div class="d-flex align-center" style="gap: 8px;">
-        <v-btn variant="tonal" color="blue" :loading="loading" @click="reload">
+      <div class="d-flex align-center flex-wrap" style="gap: 8px;">
+        <div class="d-flex align-center flex-wrap" style="gap: 6px;">
+          <v-btn
+            size="small"
+            :variant="activePeriodo === 'hoje' ? 'flat' : 'tonal'"
+            color="primary"
+            @click="aplicarPeriodo('hoje')"
+            :disabled="loading"
+          >Hoje</v-btn>
+          <v-btn
+            size="small"
+            :variant="activePeriodo === '7d' ? 'flat' : 'tonal'"
+            color="primary"
+            @click="aplicarPeriodo('7d')"
+            :disabled="loading"
+          >Últimos 7 dias</v-btn>
+          <v-btn
+            size="small"
+            :variant="activePeriodo === '30d' ? 'flat' : 'tonal'"
+            color="primary"
+            @click="aplicarPeriodo('30d')"
+            :disabled="loading"
+          >Últimos 30 dias</v-btn>
+        </div>
+        <v-divider vertical class="mx-1" />
+        <v-btn variant="tonal" color="blue" :loading="loading" @click="reload(rangeFor(activePeriodo))">
           Recarregar
         </v-btn>
         <v-btn variant="text" color="blue" :loading="syncLoading" @click="syncPendentes" v-if="temPendentes">
@@ -110,6 +134,35 @@ const temPendentes = computed(()=> (compras.value || []).some(c => c?.pendenteSy
 const loading = ref(false)
 const syncLoading = ref(false)
 
+// Controle de período rápido do histórico
+const activePeriodo = ref('hoje') // 'hoje' | '7d' | '30d'
+
+function toYmd(d){
+  // Formata data local para YYYY-MM-DD
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function rangeFor(periodo){
+  const hoje = new Date()
+  // zera horas para trabalhar por dia local
+  const end = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
+  let start = new Date(end)
+  if (periodo === '7d') {
+    // últimos 7 dias incluindo hoje => hoje-6 .. hoje
+    start.setDate(start.getDate() - 6)
+  } else if (periodo === '30d') {
+    // últimos 30 dias incluindo hoje => hoje-29 .. hoje
+    start.setDate(start.getDate() - 29)
+  } else {
+    // hoje
+    start = new Date(end)
+  }
+  return { from: toYmd(start), to: toYmd(end) }
+}
+
 function formatCurrency(v){
   const n = Number(v || 0)
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -145,26 +198,42 @@ function voltarCompras(){
   router.push({ name: 'Produtos2' })
 }
 
-async function reload(){
+async function reload(params){
   try{
     loading.value = true
-    await store.carregarHistorico?.()
+    if (params && (params.from || params.to)) {
+      await store.carregarHistorico?.({ from: params.from, to: params.to })
+    } else {
+      // sem parâmetros: backend retorna somente o dia atual
+      await store.carregarHistorico?.()
+    }
   } finally {
     loading.value = false
   }
+}
+
+function aplicarPeriodo(periodo){
+  activePeriodo.value = periodo
+  const { from, to } = rangeFor(periodo)
+  reload({ from, to })
 }
 
 async function syncPendentes(){
   try{
     syncLoading.value = true
     await store.sincronizarComprasPendentes?.()
-    await store.carregarHistorico?.()
+    const { from, to } = rangeFor(activePeriodo.value)
+    await store.carregarHistorico?.({ from, to })
   } finally {
     syncLoading.value = false
   }
 }
 
-onMounted(()=>{ reload(); try{ store.listarProprietarios?.() }catch(_){ /* noop */ } })
+onMounted(()=>{
+  // por padrão, carrega o dia de hoje
+  aplicarPeriodo('hoje')
+  try{ store.listarProprietarios?.() }catch(_){ /* noop */ }
+})
 </script>
 
 <style scoped>

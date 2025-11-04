@@ -135,9 +135,16 @@ export const produtosAppStore = defineStore('products', () => {
   }
 
   // Carrega histórico de compras da API e mescla com pendentes locais
-  async function carregarHistorico(){
+  // Aceita opcionalmente período por dia com strings no formato 'YYYY-MM-DD'
+  // Ex.: carregarHistorico({ from: '2025-03-01', to: '2025-03-07' })
+  async function carregarHistorico(params = {}){
     try{
-      const { data } = await axios.get('https://app-lojinha-990926851328.us-central1.run.app/api/compras')
+      const query = {}
+      const from = params?.from
+      const to = params?.to
+      if (typeof from === 'string' && from) query.from = from
+      if (typeof to === 'string' && to) query.to = to
+      const { data } = await axios.get('https://app-lojinha-990926851328.us-central1.run.app/api/compras', { params: query })
       // suporta respostas em vários formatos
       const lista = Array.isArray(data?.compras) ? data.compras : (Array.isArray(data) ? data : [])
       const normalizados = lista.map(normalizePedido)
