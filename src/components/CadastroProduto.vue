@@ -106,7 +106,8 @@
                 <v-btn
                   color="blue-accent-2"
                   type="submit"
-                  :disabled="!formValido"
+                  :loading="salvando"
+                  :disabled="!formValido || salvando"
                 >
                   Cadastrar
                 </v-btn>
@@ -161,6 +162,7 @@ const validacaoPreco = ref([
 
 async function onCriarProduto() {
   try {
+    salvando.value = true
     const { nome, valor, descricao, imagem, codigoDeBarras, emEstoque, proprietarioId } = dadosProduto.value
 
     const formData = new FormData()
@@ -193,6 +195,8 @@ async function onCriarProduto() {
     onLimpar()
   } catch (error) {
     console.error('Falha ao cadastrar produto:', error)
+  } finally {
+    salvando.value = false
   }
 }
 function onLimpar(){
@@ -231,6 +235,7 @@ function abrirSeletorImagem() {
 
 // Config da empresa e preço sugerido
 const store = produtosAppStore()
+const salvando = ref(false)
 const precoSugerido = computed(() => {
   const base = Number(dadosProduto.value.valor || 0)
   const pct = Number(store.empresaConfig?.porcentagemAumentoSugerido || 0)

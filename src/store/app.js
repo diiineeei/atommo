@@ -22,6 +22,27 @@ export const produtosAppStore = defineStore('products', () => {
   const proprietarios = ref([])
   const isAdmin = computed(() => String(user.value.nivelAcesso || '').toLowerCase() === 'admin')
 
+  // Loading global baseado em requisições Axios em andamento
+  const pendingRequests = ref(0)
+  const globalLoading = computed(() => pendingRequests.value > 0)
+
+  let interceptorsInstalled = false
+  function setupAxiosInterceptors(){
+    if (interceptorsInstalled) return
+    interceptorsInstalled = true
+    axios.interceptors.request.use((config) => {
+      pendingRequests.value++
+      return config
+    }, (error) => Promise.reject(error))
+    axios.interceptors.response.use((response) => {
+      pendingRequests.value = Math.max(0, pendingRequests.value - 1)
+      return response
+    }, (error) => {
+      pendingRequests.value = Math.max(0, pendingRequests.value - 1)
+      return Promise.reject(error)
+    })
+  }
+
   function applyAuthHeader(token){
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
@@ -460,9 +481,11 @@ export const produtosAppStore = defineStore('products', () => {
   }
 
   // Inicialização da Store
+  // Configura interceptors antes de chamadas iniciais
+  setupAxiosInterceptors()
   loadSession();
   // Carrega produtos após restaurar sessão (se houver)
   loadProducts();
 
-  return { products, productsCar, user, users, proprietarios, isAdmin, empresaConfig, loadProducts, loadSession, clearSession, finalizarCompra, carregarHistorico, sincronizarComprasPendentes, atualizarProduto, deletarProduto, listarUsuarios, criarUsuario, atualizarUsuario, deletarUsuario, carregarConfigEmpresa, salvarConfigEmpresa, listarProprietarios, criarProprietario, atualizarProprietario, deletarProprietario }; // Retorne também a função loadProducts se necessário
+  return { products, productsCar, user, users, proprietarios, isAdmin, empresaConfig, loadProducts, loadSession, clearSession, finalizarCompra, carregarHistorico, sincronizarComprasPendentes, atualizarProduto, deletarProduto, listarUsuarios, criarUsuario, atualizarUsuario, deletarUsuario, carregarConfigEmpresa, salvarConfigEmpresa, listarProprietarios, criarProprietario, atualizarProprietario, deletarProprietario, globalLoading };
 });

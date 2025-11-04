@@ -25,6 +25,14 @@
 
     <v-app-bar-nav-icon class="d-flex d-sm-none" size="40" @click.stop="drawer = !drawer">
     </v-app-bar-nav-icon>
+    <!-- Barra de progresso global (API) -->
+    <v-progress-linear
+      v-if="store.globalLoading"
+      indeterminate
+      color="white"
+      height="3"
+      class="app-bar__progress"
+    />
   </v-app-bar>
     <v-navigation-drawer
         v-model="drawer"
@@ -93,6 +101,13 @@ const drawer = ref(false)
   width: 100%;
   backdrop-filter: blur(8px);
   font-size: 1.05rem;
+}
+
+.app-bar__progress{
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 .app-bar :deep(.v-toolbar__content){

@@ -218,7 +218,8 @@ function metodoResumo(p){
 
 function proprietarioNome(id){
   try{
-    if (id == null || id === '') return '—'
+    // Trata ausências como "Não identificado"
+    if (id == null || id === '' || id === 'NA' || id === 0 || id === '0') return 'Não identificado'
     const arr = Array.isArray(store.proprietarios) ? store.proprietarios : []
     const found = arr.find(p => (p?.ID ?? p?.id) === id)
     return found?.nome ? `${found.nome} (#${found?.ID ?? found?.id})` : `#${id}`
@@ -269,9 +270,10 @@ const resumoRepasses = computed(()=>{
   for(const p of (compras.value || [])){
     const arr = Array.isArray(p?.repasses) ? p.repasses : []
     for(const rp of arr){
-      const id = rp?.proprietarioId ?? rp?.ProprietarioID ?? rp?.proprietarioID ?? rp?.proprietario_id
+      const rawId = rp?.proprietarioId ?? rp?.ProprietarioID ?? rp?.proprietarioID ?? rp?.proprietario_id
+      const id = (rawId == null || rawId === '') ? 'NA' : rawId
       const valor = Number(rp?.valor ?? 0)
-      if (id != null && valor){
+      if (valor){
         mapa.set(id, (mapa.get(id) || 0) + valor)
       }
     }
