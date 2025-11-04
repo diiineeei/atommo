@@ -43,6 +43,7 @@
             <thead>
               <tr>
                 <th class="text-left">Produto</th>
+                <th class="text-left">Proprietário</th>
                 <th class="text-left">Qtde</th>
                 <th class="text-left">Valor</th>
                 <th class="text-left">Subtotal</th>
@@ -61,6 +62,7 @@
                     </div>
                   </div>
                 </td>
+                <td class="text-medium-emphasis">{{ proprietarioNome(item.proprietarioId) }}</td>
                 <td>{{ item.quantidade }}</td>
                 <td>{{ formatCurrency(item.valor) }}</td>
                 <td>{{ formatCurrency(Number(item.valor||0) * Number(item.quantidade||0)) }}</td>
@@ -132,6 +134,7 @@ function metodoResumo(p){
 
 function proprietarioNome(id){
   try{
+    if (id == null || id === '') return '—'
     const arr = Array.isArray(store.proprietarios) ? store.proprietarios : []
     const found = arr.find(p => (p?.ID ?? p?.id) === id)
     return found?.nome ? `${found.nome} (#${found?.ID ?? found?.id})` : `#${id}`
@@ -167,5 +170,5 @@ onMounted(()=>{ reload(); try{ store.listarProprietarios?.() }catch(_){ /* noop 
 <style scoped>
 /* Tabela responsiva: permite rolagem horizontal em telas pequenas */
 .table-wrapper{ overflow-x: auto; }
-.table-wrapper :deep(table){ min-width: 520px; }
+.table-wrapper :deep(table){ min-width: 680px; }
 </style>
