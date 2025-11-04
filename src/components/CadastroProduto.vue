@@ -82,6 +82,19 @@
                 </template>
               </v-text-field>
 
+              <v-select
+                v-model="dadosProduto.proprietarioId"
+                :items="listaProprietarios"
+                item-title="nome"
+                item-value="id"
+                :return-object="false"
+                variant="outlined"
+                label="Proprietário (opcional)"
+                :hint="'Vincule um proprietário a este produto'"
+                persistent-hint
+                :disabled="false"
+              />
+
               <v-switch
                 class="mt-2"
                 color="blue-accent-2"
@@ -124,6 +137,7 @@ const dadosProduto = ref({
   emEstoque: true,
   imagem: null,
   precoVenda: '',
+  proprietarioId: null,
 })
 
 const formValido = ref(false)
@@ -147,7 +161,7 @@ const validacaoPreco = ref([
 
 async function onCriarProduto() {
   try {
-    const { nome, valor, descricao, imagem, codigoDeBarras, emEstoque } = dadosProduto.value
+    const { nome, valor, descricao, imagem, codigoDeBarras, emEstoque, proprietarioId } = dadosProduto.value
 
     const formData = new FormData()
     // campo de arquivo — mantém como 'imagem' pois o backend já trata
@@ -165,6 +179,12 @@ async function onCriarProduto() {
       formData.append('PrecoVenda', String(pv))
       // também inclui camelCase para compatibilidade
       formData.append('precoVenda', String(pv))
+    }
+
+    // proprietário opcional
+    const pid = Number(proprietarioId)
+    if (!isNaN(pid) && pid > 0) {
+      formData.append('proprietarioId', String(pid))
     }
 
     await axios.post('https://app-lojinha-990926851328.us-central1.run.app/api/upload', formData, {
@@ -228,6 +248,12 @@ function usarPrecoSugerido(){
 onMounted(() => {
   // Tenta carregar config caso ainda não esteja na store
   try{ store.carregarConfigEmpresa() }catch(_){ /* noop */ }
+  try{ store.listarProprietarios?.() }catch(_){ /* noop */ }
+})
+
+const listaProprietarios = computed(() => {
+  const arr = Array.isArray(store.proprietarios) ? store.proprietarios : []
+  return arr.map(p => ({ id: p?.ID ?? p?.id, nome: p?.nome || `#${p?.ID ?? p?.id}` }))
 })
 
 </script>

@@ -10,6 +10,16 @@
           <v-text-field v-model.number="edit.precoVenda" label="Preço de venda (opcional)" variant="outlined" type="number" class="mb-3" />
           <v-text-field v-model="edit.codigoDeBarras" label="Código de barras" variant="outlined" class="mb-3" />
           <v-text-field v-model="edit.imagemURL" label="Imagem (nome do arquivo, ex: 20251102040421.png)" variant="outlined" class="mb-3" />
+          <v-select
+            v-model="edit.proprietarioId"
+            :items="listaProprietarios"
+            item-title="nome"
+            item-value="id"
+            label="Proprietário (opcional)"
+            variant="outlined"
+            class="mb-3"
+            hide-details
+          />
           <v-switch v-model="edit.emEstoque" :label="`Em estoque: ${edit.emEstoque ? 'Sim' : 'Não'}`" color="blue-accent-2" inset />
         </v-form>
       </v-card-text>
@@ -23,7 +33,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch, onMounted } from 'vue'
 import { produtosAppStore } from '@/store/app'
 
 const props = defineProps({
@@ -49,6 +59,7 @@ const edit = reactive({
   emEstoque: true,
   codigoDeBarras: '',
   imagemURL: '',
+  proprietarioId: null,
 })
 const salvando = ref(false)
 
@@ -63,6 +74,7 @@ watch(() => props.produto, (p) => {
   // imagemURL do backend pode vir com URL completa; se quiser enviar somente o arquivo, o backend aceita o nome
   // se preferir, deixe como veio — o backend normaliza quando o arquivo existir
   edit.imagemURL = (prod.imagemURL || '').split('/').pop() || (prod.imagemURL || '')
+  edit.proprietarioId = prod.proprietarioId ?? null
 }, { immediate: true })
 
 function fechar(){
@@ -82,6 +94,7 @@ async function onSalvar(){
       emEstoque: !!edit.emEstoque,
       codigoDeBarras: edit.codigoDeBarras,
       imagemURL: edit.imagemURL || undefined,
+      proprietarioId: edit.proprietarioId != null ? Number(edit.proprietarioId) : undefined,
     }
     const { ok, produto } = await store.atualizarProduto(id, patch)
     if(ok){
@@ -92,6 +105,10 @@ async function onSalvar(){
     salvando.value = false
   }
 }
+
+onMounted(() => {
+  try{ store.listarProprietarios?.() }catch(_){ /* noop */ }
+})
 </script>
 
 <style scoped>

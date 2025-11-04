@@ -19,6 +19,7 @@ export const produtosAppStore = defineStore('products', () => {
     compras: []
   });
   const users = ref([])
+  const proprietarios = ref([])
   const isAdmin = computed(() => String(user.value.nivelAcesso || '').toLowerCase() === 'admin')
 
   function applyAuthHeader(token){
@@ -53,6 +54,12 @@ export const produtosAppStore = defineStore('products', () => {
           valor: Number(pg?.valor ?? 0),
         }))
       : undefined
+    const repasses = Array.isArray(p.repasses)
+      ? p.repasses.map((r) => ({
+          proprietarioId: r?.proprietarioId ?? r?.proprietarioID ?? r?.ProprietarioID ?? r?.proprietario_id ?? null,
+          valor: Number(r?.valor ?? 0),
+        }))
+      : undefined
     return {
       id: p.id ?? p.ID ?? p.numero ?? `${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
       criadoEm: p.criadoEm ?? p.createdAt ?? p.data ?? new Date().toISOString(),
@@ -63,6 +70,7 @@ export const produtosAppStore = defineStore('products', () => {
         parcelas: p.parcelas || 1,
       },
       pagamentos,
+      repasses,
       itens,
       pendenteSync: !!p.pendenteSync,
     }
@@ -155,7 +163,7 @@ export const produtosAppStore = defineStore('products', () => {
     try{
       if(id == null) throw new Error('id_invalido')
       // filtra apenas campos aceitos pelo backend
-      const permitidos = ['nome','descricao','valor','emEstoque','imagemURL','codigoDeBarras','precoVenda']
+      const permitidos = ['nome','descricao','valor','emEstoque','imagemURL','codigoDeBarras','precoVenda','proprietarioId']
       const payload = {}
       for(const k of permitidos){
         if (Object.prototype.hasOwnProperty.call(patch, k)) payload[k] = patch[k]
@@ -382,10 +390,54 @@ export const produtosAppStore = defineStore('products', () => {
     }
   }
 
+  // Proprietários (admin)
+  async function listarProprietarios(){
+    try{
+      const { data } = await axios.get('https://app-lojinha-990926851328.us-central1.run.app/api/proprietarios')
+      proprietarios.value = Array.isArray(data) ? data : (Array.isArray(data?.proprietarios) ? data.proprietarios : [])
+      return { ok: true, total: proprietarios.value.length }
+    }catch(error){
+      console.error('Erro ao listar proprietários:', error)
+      return { ok: false, error }
+    }
+  }
+
+  async function criarProprietario(payload){
+    try{
+      const permitidos = ['nome','documento','contato']
+      const body = {}
+      for(const k of permitidos){ if(Object.prototype.hasOwnProperty.call(payload, k)) body[k] = payload[k] }
+      const { data } = await axios.post('https://app-lojinha-990926851328.us-central1.run.app/api/proprietarios', body, { headers: { 'Content-Type': 'application/json' } })
+      if(data){ proprietarios.value.unshift(data) }
+      return { ok: true, proprietario: data }
+    }catch(error){
+      console.error('Erro ao criar proprietário:', error)
+      return { ok: false, error }
+    }
+  }
+
+  async function deletarProprietario(id){
+    try{
+      if(id == null) throw new Error('id_invalido')
+      const res = await axios.delete(`https://app-lojinha-990926851328.us-central1.run.app/api/proprietarios/${id}`)
+      if(res?.status === 204 || res?.status === 200){
+        proprietarios.value = proprietarios.value.filter(p => (p?.ID ?? p?.id) !== id)
+        return { ok: true }
+      }
+      return { ok: false, status: res?.status }
+    }catch(error){
+      if(error?.response?.status === 409){
+        return { ok: false, conflito: true }
+      }
+      console.error('Erro ao deletar proprietário:', error)
+      return { ok: false, error }
+    }
+  }
+
   // Inicialização da Store
   loadSession();
   // Carrega produtos após restaurar sessão (se houver)
   loadProducts();
 
-  return { products, productsCar, user, users, isAdmin, empresaConfig, loadProducts, loadSession, clearSession, finalizarCompra, carregarHistorico, sincronizarComprasPendentes, atualizarProduto, deletarProduto, listarUsuarios, criarUsuario, atualizarUsuario, deletarUsuario, carregarConfigEmpresa, salvarConfigEmpresa }; // Retorne também a função loadProducts se necessário
+  return { products, productsCar, user, users, proprietarios, isAdmin, empresaConfig, loadProducts, loadSession, clearSession, finalizarCompra, carregarHistorico, sincronizarComprasPendentes, atualizarProduto, deletarProduto, listarUsuarios, criarUsuario, atualizarUsuario, deletarUsuario, carregarConfigEmpresa, salvarConfigEmpresa, listarProprietarios, criarProprietario, deletarProprietario }; // Retorne também a função loadProducts se necessário
 });

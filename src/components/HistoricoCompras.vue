@@ -76,6 +76,12 @@
                 <span v-if="pg.valor != null"> — {{ formatCurrency(pg.valor) }}</span>
               </div>
             </div>
+            <div v-if="Array.isArray(pedido.repasses) && pedido.repasses.length" class="text-subtitle-2">
+              <div class="mb-1"><b>Repasses por proprietário:</b></div>
+              <div v-for="(rp, i) in pedido.repasses" :key="i" class="text-medium-emphasis">
+                • {{ proprietarioNome(rp.proprietarioId) }} — {{ formatCurrency(rp.valor) }}
+              </div>
+            </div>
           </div>
         </v-expansion-panel-text>
       </v-expansion-panel>
@@ -122,6 +128,14 @@ function metodoResumo(p){
   }catch(_){ return '' }
 }
 
+function proprietarioNome(id){
+  try{
+    const arr = Array.isArray(store.proprietarios) ? store.proprietarios : []
+    const found = arr.find(p => (p?.ID ?? p?.id) === id)
+    return found?.nome ? `${found.nome} (#${found?.ID ?? found?.id})` : `#${id}`
+  }catch(_){ return `#${id}` }
+}
+
 function voltarCompras(){
   router.push({ name: 'Produtos2' })
 }
@@ -145,7 +159,7 @@ async function syncPendentes(){
   }
 }
 
-onMounted(()=>{ reload() })
+onMounted(()=>{ reload(); try{ store.listarProprietarios?.() }catch(_){ /* noop */ } })
 </script>
 
 <style scoped>
