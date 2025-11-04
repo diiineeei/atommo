@@ -33,7 +33,6 @@
       <div class="scanner-right">
         <span class="scanner-last">
           <template v-if="ultimoCodigo">Último código: <strong>{{ ultimoCodigo }}</strong></template>
-          <template v-else>Aproxime o leitor do produto</template>
         </span>
         <v-btn
           variant="outlined"
