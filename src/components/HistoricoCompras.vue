@@ -36,6 +36,37 @@
       </div>
     </div>
 
+    <!-- Resumo geral do período -->
+    <v-card v-if="compras.length" class="mb-6" variant="tonal">
+      <v-card-title class="text-h6">Resumo do período</v-card-title>
+      <v-card-text>
+        <div class="d-flex flex-wrap" style="gap: 24px; justify-content: space-between;">
+          <div>
+            <div class="text-subtitle-1 font-weight-medium">Total geral</div>
+            <div class="text-h6">{{ formatCurrency(totalGeral) }}</div>
+          </div>
+          <div style="min-width:260px;">
+            <div class="text-subtitle-1 font-weight-medium mb-1">Pagamentos</div>
+            <div class="text-medium-emphasis" v-if="!resumoPagamentos.length">—</div>
+            <div v-else>
+              <div v-for="pg in resumoPagamentos" :key="pg.metodo" class="text-medium-emphasis">
+                • {{ upper(pg.metodo) }} — {{ formatCurrency(pg.valor) }}
+              </div>
+            </div>
+          </div>
+          <div style="min-width:260px;">
+            <div class="text-subtitle-1 font-weight-medium mb-1">Repasses por proprietário</div>
+            <div class="text-medium-emphasis" v-if="!resumoRepasses.length">—</div>
+            <div v-else>
+              <div v-for="rp in resumoRepasses" :key="rp.proprietarioId" class="text-medium-emphasis">
+                • {{ proprietarioNome(rp.proprietarioId) }} — {{ formatCurrency(rp.valor) }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </v-card-text>
+    </v-card>
+
     <v-alert
       v-if="!compras.length && !loading"
       type="info"
@@ -193,6 +224,62 @@ function proprietarioNome(id){
     return found?.nome ? `${found.nome} (#${found?.ID ?? found?.id})` : `#${id}`
   }catch(_){ return `#${id}` }
 }
+
+// Resumo geral do período
+const totalGeral = computed(()=> (compras.value || []).reduce((acc,p)=> acc + Number(p?.total || 0), 0))
+
+const resumoPagamentos = computed(()=>{
+  const mapa = new Map()
+  for(const p of (compras.value || [])){
+    const totalPedido = Number(p?.total || 0)
+    const arr = Array.isArray(p?.pagamentos) ? p.pagamentos : null
+    if (arr && arr.length){
+      let somaInformada = 0
+      let temValor = false
+      for(const pg of arr){
+        const metodo = String(pg?.metodo || 'indefinido')
+        const valor = Number(pg?.valor ?? 0)
+        if (valor > 0){
+          somaInformada += valor
+          temValor = true
+          mapa.set(metodo, (mapa.get(metodo) || 0) + valor)
+        }
+      }
+      if (!temValor){
+        if (arr.length === 1){
+          const metodo = String(arr[0]?.metodo || 'indefinido')
+          mapa.set(metodo, (mapa.get(metodo) || 0) + totalPedido)
+        }
+      } else if (somaInformada < totalPedido){
+        // diferença não informada de valores (ex.: desconto, arredondamento)
+        mapa.set('indefinido', (mapa.get('indefinido') || 0) + (totalPedido - somaInformada))
+      }
+    } else {
+      const metodo = String(p?.pagamento?.metodo || 'indefinido')
+      mapa.set(metodo, (mapa.get(metodo) || 0) + totalPedido)
+    }
+  }
+  const list = Array.from(mapa.entries()).map(([metodo, valor]) => ({ metodo, valor }))
+  list.sort((a,b) => b.valor - a.valor)
+  return list
+})
+
+const resumoRepasses = computed(()=>{
+  const mapa = new Map()
+  for(const p of (compras.value || [])){
+    const arr = Array.isArray(p?.repasses) ? p.repasses : []
+    for(const rp of arr){
+      const id = rp?.proprietarioId ?? rp?.ProprietarioID ?? rp?.proprietarioID ?? rp?.proprietario_id
+      const valor = Number(rp?.valor ?? 0)
+      if (id != null && valor){
+        mapa.set(id, (mapa.get(id) || 0) + valor)
+      }
+    }
+  }
+  const list = Array.from(mapa.entries()).map(([proprietarioId, valor]) => ({ proprietarioId, valor }))
+  list.sort((a,b) => b.valor - a.valor)
+  return list
+})
 
 function voltarCompras(){
   router.push({ name: 'Produtos2' })
