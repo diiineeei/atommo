@@ -139,7 +139,7 @@ async function recarregarProdutos(){
 
 // Search filter by name
 const filtroNome = ref('')
-const apenasEstoque = ref(false)
+const apenasEstoque = ref(true)
 const filteredProducts = computed(() => {
   const term = (filtroNome.value || '').trim().toLowerCase()
   const base = Array.isArray(store.products) ? store.products : []
