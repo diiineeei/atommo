@@ -19,6 +19,9 @@ import AppBar from '@/layouts/default/AppBar.vue'
 :root {
   --app-header-height: 96px;
 }
+@media (max-width: 600px){
+  :root { --app-header-height: 72px; }
+}
 
 .app-shell {
   min-height: 100vh;

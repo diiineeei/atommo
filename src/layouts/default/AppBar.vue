@@ -1,10 +1,10 @@
 <template>
-  <v-app-bar
-    color="blue-accent-2"
-    elevation="8"
-    height="96"
-    class="app-bar"
-  >
+    <v-app-bar
+      color="blue-accent-2"
+      elevation="8"
+      height="96"
+      class="app-bar"
+    >
     <v-app-bar-title >
       <img src="@/assets/logo-h.png" :width="150"/>
     </v-app-bar-title>
@@ -23,7 +23,7 @@
       </v-tab>
     </v-tabs>
 
-    <v-app-bar-nav-icon class="d-flex d-sm-none" size="70" @click.stop="drawer = !drawer">
+    <v-app-bar-nav-icon class="d-flex d-sm-none" size="40" @click.stop="drawer = !drawer">
     </v-app-bar-nav-icon>
   </v-app-bar>
     <v-navigation-drawer
@@ -108,5 +108,13 @@ const drawer = ref(false)
   pointer-events: none;
   color: #fff;
   font-weight: 600;
+}
+
+@media (max-width: 600px){
+  .app-bar :deep(.v-toolbar__content){
+    height: 72px !important;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
 }
 </style>

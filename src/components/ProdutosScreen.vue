@@ -483,6 +483,14 @@ function onAddToCart(product) {
   .main-container{
     padding: 20px 16px 40px;
   }
+  /* toolbar empilha em 1 coluna no mobile */
+  .scanner-toolbar{
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .scanner-left{ width: 100%; }
+  .scanner-search{ max-width: none; margin: 0; width: 100%; }
+  .scanner-right{ width: 100%; justify-content: flex-end; }
   .products-grid{
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 14px;
@@ -498,10 +506,8 @@ function onAddToCart(product) {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 12px;
   }
-  .scanner-toolbar{
-    flex-wrap: wrap;
-    gap: 8px 12px;
-  }
+  /* redundante, mas mantém consistência em telas muito estreitas */
+  .scanner-toolbar{ grid-template-columns: 1fr; }
   .scanner-right{ width: 100%; display: flex; justify-content: space-between; }
 }
 </style>
