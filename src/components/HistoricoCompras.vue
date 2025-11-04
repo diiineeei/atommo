@@ -38,6 +38,7 @@
           </div>
         </v-expansion-panel-title>
         <v-expansion-panel-text>
+          <div class="table-wrapper">
           <v-table density="comfortable">
             <thead>
               <tr>
@@ -66,6 +67,7 @@
               </tr>
             </tbody>
           </v-table>
+          </div>
           <div class="d-flex justify-space-between mt-4 align-start" style="gap: 16px;">
             <div class="text-subtitle-1"><b>Total:</b> {{ formatCurrency(pedido.total) }}</div>
             <div v-if="Array.isArray(pedido.pagamentos) && pedido.pagamentos.length" class="text-subtitle-2">
@@ -163,4 +165,7 @@ onMounted(()=>{ reload(); try{ store.listarProprietarios?.() }catch(_){ /* noop 
 </script>
 
 <style scoped>
+/* Tabela responsiva: permite rolagem horizontal em telas pequenas */
+.table-wrapper{ overflow-x: auto; }
+.table-wrapper :deep(table){ min-width: 520px; }
 </style>

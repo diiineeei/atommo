@@ -116,4 +116,16 @@
     color: #16a34a; /* verde */
     font-weight: 700;
   }
+
+  @media (max-width: 720px){
+    .activity-indicator-container{ height: 160px; }
+    .v-img{ height: 160px !important; }
+    .product-title{ min-height: 44px; -webkit-line-clamp: 2; }
+    .product-desc{ min-height: 48px; -webkit-line-clamp: 2; }
+  }
+
+  @media (max-width: 480px){
+    .activity-indicator-container{ height: 140px; }
+    .v-img{ height: 140px !important; }
+  }
     </style>

@@ -176,4 +176,18 @@ const productvalor = ((produto) => {
   background: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
 }
+
+@media (max-width: 960px){
+  .cart-wrapper{ max-height: none; }
+  .cart-list{ gap: 12px; }
+  .item-main-container{ gap: 8px; }
+}
+
+@media (max-width: 600px){
+  .cart-list{ gap: 8px; }
+  .cart-items{ padding-right: 0; }
+  .cart-footer h2{ font-size: 1.1rem !important; }
+  .cart-wrapper :deep(.v-avatar){ width: 56px !important; height: 56px !important; }
+  .cart-wrapper :deep(.v-list-item){ padding-left: 8px; padding-right: 6px; }
+}
 </style>

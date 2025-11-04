@@ -321,7 +321,7 @@ function onAddToCart(product) {
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 36px 40px 64px;
+  padding: 28px 32px 56px;
   box-sizing: border-box;
 
 }
@@ -375,17 +375,17 @@ function onAddToCart(product) {
   max-width: 1360px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  gap: 28px;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
   align-items: start;
 }
 
 .products-grid{
   display: grid;
   width: 100%;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 28px;
-  padding: 12px 4px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 8px 0;
 }
 
 .cart-aside{
@@ -425,8 +425,8 @@ function onAddToCart(product) {
 
 @media (max-width: 1280px){
   .main-container{
-    padding-left: 28px;
-    padding-right: 28px;
+    padding-left: 20px;
+    padding-right: 20px;
   }
 
   .page-title{
@@ -434,19 +434,19 @@ function onAddToCart(product) {
   }
 
   .content{
-    grid-template-columns: minmax(0, 1fr) 280px;
-    gap: 24px;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 20px;
   }
 
   .products-grid{
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 18px;
   }
 
   .cart-panel--fixed{
     top: calc(var(--app-header-height, 96px) + 96px);
     right: max(28px, calc((100vw - 1280px) / 2 + 16px));
-    width: clamp(280px, 28vw, 360px);
+    width: clamp(280px, 28vw, 340px);
   }
 }
 
@@ -458,7 +458,7 @@ function onAddToCart(product) {
   .content{
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 16px;
   }
 
   .cart-panel{
@@ -477,5 +477,31 @@ function onAddToCart(product) {
   .cart-panel :deep(.cart-list){
     max-height: calc(100vh - var(--app-header-height, 96px) - 120px);
   }
+}
+
+@media (max-width: 720px){
+  .main-container{
+    padding: 20px 16px 40px;
+  }
+  .products-grid{
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+  }
+}
+
+@media (max-width: 600px){
+  .page-title{
+    font-size: clamp(1.6rem, 1.2rem + 2vw, 2rem);
+    margin-bottom: 20px;
+  }
+  .products-grid{
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
+  .scanner-toolbar{
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+  .scanner-right{ width: 100%; display: flex; justify-content: space-between; }
 }
 </style>
