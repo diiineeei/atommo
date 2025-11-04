@@ -21,16 +21,14 @@
              :disabled="carrinhoVazio"
            />
            <div v-if="metodoPagamento === 'cartao'" class="mt-3">
-             <v-text-field
+             <v-select
                v-model.number="parcelas"
+               :items="parcelasOptions"
                label="Parcelas"
-               type="number"
-               min="1"
-               max="12"
-               step="1"
                variant="outlined"
                density="comfortable"
                hide-details
+               :suffix="'x'"
              />
            </div>
          </template>
@@ -61,18 +59,16 @@
                  density="comfortable"
                  hide-details
                />
-               <v-text-field
+               <v-select
                  v-if="pg.metodo === 'cartao'"
                  v-model.number="pg.parcelas"
+                 :items="parcelasOptions"
                  label="Parcelas"
-                 type="number"
-                 min="1"
-                 max="12"
-                 step="1"
                  class="pg-row__parcelas"
                  variant="outlined"
                  density="comfortable"
                  hide-details
+                 :suffix="'x'"
                />
                <v-btn icon color="red" variant="text" :disabled="pagamentos.length === 1" @click="removerPagamento(idx)">
                  <v-icon icon="mdi-delete" />
@@ -151,6 +147,7 @@ function metodoLabel(m){
   return labels[m] || String(m || '').toUpperCase()
 }
 const taxaMaquininha = computed(() => Number(store.empresaConfig?.taxaMaquininha || 0))
+const parcelasOptions = computed(() => Array.from({ length: 12 }, (_, i) => i + 1))
 
 const subtotal = computed(() => store.productsCar.reduce((total, p) => total + Number(p.valor || 0) * Number(p.quantity || 0), 0))
 function round2(n){ return Math.round(Number(n || 0) * 100) / 100 }

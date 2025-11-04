@@ -34,6 +34,13 @@
         <span class="scanner-last">
           <template v-if="ultimoCodigo">Último código: <strong>{{ ultimoCodigo }}</strong></template>
         </span>
+        <v-checkbox
+          v-model="apenasEstoque"
+          hide-details
+          density="compact"
+          color="green"
+          label="Só em estoque"
+        />
         <v-btn
           variant="outlined"
           color="blue-accent-2"
@@ -131,13 +138,18 @@ async function recarregarProdutos(){
 
 // Search filter by name
 const filtroNome = ref('')
+const apenasEstoque = ref(false)
 const filteredProducts = computed(() => {
   const term = (filtroNome.value || '').trim().toLowerCase()
-  if (!term) return store.products
-  return store.products.filter((p) =>
-    (p?.nome ?? '').toLowerCase().includes(term) ||
-    (p?.descricao ?? '').toLowerCase().includes(term)
-  )
+  const base = Array.isArray(store.products) ? store.products : []
+  return base.filter((p) => {
+    const okEstoque = !apenasEstoque.value || !!(p?.emEstoque ?? true)
+    if (!okEstoque) return false
+    if (!term) return true
+    const nome = String(p?.nome || '').toLowerCase()
+    const desc = String(p?.descricao || '').toLowerCase()
+    return nome.includes(term) || desc.includes(term)
+  })
 })
 
 // Edição/Exclusão de produtos
@@ -490,7 +502,7 @@ function onAddToCart(product) {
   }
   .scanner-left{ width: 100%; }
   .scanner-search{ max-width: none; margin: 0; width: 100%; }
-  .scanner-right{ width: 100%; justify-content: flex-end; }
+  .scanner-right{ width: 100%; justify-content: space-between; flex-wrap: wrap; }
   .products-grid{ gap: 12px; }
 }
 
