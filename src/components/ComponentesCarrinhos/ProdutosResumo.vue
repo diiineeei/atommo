@@ -231,11 +231,12 @@ watch(subtotal, () => {
 </script>
 
 <style  scoped>
-.pg-row{ display: grid; grid-template-columns: 1.2fr 1fr auto auto; gap: 8px; align-items: center; }
+.pg-row{ display: grid; grid-template-columns: 1fr 1fr 110px auto; gap: 8px; align-items: center; }
 .pg-row__metodo{ min-width: 120px; }
 .pg-row__valor{ min-width: 120px; }
-.pg-row__parcelas{ max-width: 120px; }
-@media (max-width: 480px){
+.pg-row__parcelas{ width: 110px; min-width: 100px; }
+/* Quando a largura é muito limitada, parcela quebra para a linha de baixo */
+@media (max-width: 768px){
   .pg-row{ grid-template-columns: 1fr 1fr auto; }
   .pg-row__parcelas{ grid-column: 1 / span 2; }
 }
