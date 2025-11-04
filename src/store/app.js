@@ -390,6 +390,22 @@ export const produtosAppStore = defineStore('products', () => {
     }
   }
 
+  async function atualizarProprietario(id, patch = {}){
+    try{
+      if(id == null) throw new Error('id_invalido')
+      const permitidos = ['nome','documento','contato']
+      const body = {}
+      for(const k of permitidos){ if(Object.prototype.hasOwnProperty.call(patch, k)) body[k] = patch[k] }
+      const { data } = await axios.patch(`https://app-lojinha-990926851328.us-central1.run.app/api/proprietarios/${id}`, body, { headers: { 'Content-Type': 'application/json' } })
+      const idx = proprietarios.value.findIndex(p => (p?.ID ?? p?.id) === id)
+      if(idx >= 0){ proprietarios.value[idx] = { ...proprietarios.value[idx], ...data } }
+      return { ok: true, proprietario: data }
+    }catch(error){
+      console.error('Erro ao atualizar proprietário:', error)
+      return { ok: false, error }
+    }
+  }
+
   // Proprietários (admin)
   async function listarProprietarios(){
     try{
@@ -439,5 +455,5 @@ export const produtosAppStore = defineStore('products', () => {
   // Carrega produtos após restaurar sessão (se houver)
   loadProducts();
 
-  return { products, productsCar, user, users, proprietarios, isAdmin, empresaConfig, loadProducts, loadSession, clearSession, finalizarCompra, carregarHistorico, sincronizarComprasPendentes, atualizarProduto, deletarProduto, listarUsuarios, criarUsuario, atualizarUsuario, deletarUsuario, carregarConfigEmpresa, salvarConfigEmpresa, listarProprietarios, criarProprietario, deletarProprietario }; // Retorne também a função loadProducts se necessário
+  return { products, productsCar, user, users, proprietarios, isAdmin, empresaConfig, loadProducts, loadSession, clearSession, finalizarCompra, carregarHistorico, sincronizarComprasPendentes, atualizarProduto, deletarProduto, listarUsuarios, criarUsuario, atualizarUsuario, deletarUsuario, carregarConfigEmpresa, salvarConfigEmpresa, listarProprietarios, criarProprietario, atualizarProprietario, deletarProprietario }; // Retorne também a função loadProducts se necessário
 });

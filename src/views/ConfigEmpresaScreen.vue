@@ -52,9 +52,11 @@
                 </v-col>
               </v-row>
 
-              <div class="d-flex gap-3 mt-2">
+              <div class="d-flex gap-3 mt-2 align-center">
                 <v-btn color="blue-accent-2" :loading="salvando" type="submit">Salvar</v-btn>
                 <v-btn variant="outlined" @click="carregar">Recarregar</v-btn>
+                <v-spacer />
+                <v-btn variant="tonal" color="blue" @click="irProprietarios" v-if="store.isAdmin">Gerenciar proprietários</v-btn>
               </div>
             </v-form>
           </v-card-text>
@@ -71,9 +73,11 @@
 
 <script setup>
 import { onMounted, reactive, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { produtosAppStore } from '@/store/app'
 
 const store = produtosAppStore()
+const router = useRouter()
 
 const metodosDisponiveis = ['pix','cartao','dinheiro','boleto']
 
@@ -128,6 +132,8 @@ async function onSalvar(){
 }
 
 onMounted(() => { carregar() })
+
+function irProprietarios(){ router.push({ name: 'Proprietarios' }) }
 </script>
 
 <style scoped>
@@ -138,4 +144,3 @@ onMounted(() => { carregar() })
 }
 .gap-3{ gap: 12px; }
 </style>
-
