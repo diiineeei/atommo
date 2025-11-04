@@ -148,6 +148,7 @@ const produtoExcluindo = ref(null)
 const excluindo = ref(false)
 
 function abrirEdicao(produto){
+  try{ store.listarProprietarios?.() }catch(_){ /* noop */ }
   produtoEditando.value = produto
   edicaoAberta.value = true
 }

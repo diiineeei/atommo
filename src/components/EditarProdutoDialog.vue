@@ -109,6 +109,11 @@ async function onSalvar(){
 onMounted(() => {
   try{ store.listarProprietarios?.() }catch(_){ /* noop */ }
 })
+
+const listaProprietarios = computed(() => {
+  const arr = Array.isArray(store.proprietarios) ? store.proprietarios : []
+  return arr.map(p => ({ id: p?.ID ?? p?.id, nome: p?.nome || `#${p?.ID ?? p?.id}` }))
+})
 </script>
 
 <style scoped>
