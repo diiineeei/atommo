@@ -37,7 +37,7 @@
                 </v-col>
             </v-row>
         </v-col>
-        <v-col id="total-container" class="bg-white pa-5" cols="12" md="3" style="min-height: 600px;">
+        <v-col id="total-container" class="bg-white pa-5" cols="12" md="4" lg="3" style="min-height: 600px;">
             <ProdutosResumo/>
         </v-col>
     </v-row>

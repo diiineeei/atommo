@@ -26,7 +26,7 @@
                :items="parcelasOptions"
                label="Parcelas"
                variant="outlined"
-               density="comfortable"
+               density="compact"
                hide-details
                :suffix="'x'"
              />
@@ -66,7 +66,7 @@
                  label="Parcelas"
                  class="pg-row__parcelas"
                  variant="outlined"
-                 density="comfortable"
+                 density="compact"
                  hide-details
                  :suffix="'x'"
                />

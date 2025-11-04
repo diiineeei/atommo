@@ -15,7 +15,7 @@
           hide-details
           inset
           v-model="habilitarLeitor"
-          :label="`Leitor de código de barras: ${habilitarLeitor ? 'Ativo' : 'Inativo'}`"
+          :label="`Leitor: ${habilitarLeitor ? 'Ativo' : 'Inativo'}`"
         />
       </div>
       <div class="scanner-search">
@@ -34,12 +34,13 @@
         <span class="scanner-last">
           <template v-if="ultimoCodigo">Último código: <strong>{{ ultimoCodigo }}</strong></template>
         </span>
-        <v-checkbox
+        <v-switch
           v-model="apenasEstoque"
           hide-details
           density="compact"
+          inset
           color="green"
-          label="Só em estoque"
+          :label="`Só em estoque: ${apenasEstoque ? 'Sim' : 'Não'}`"
         />
         <v-btn
           variant="outlined"
