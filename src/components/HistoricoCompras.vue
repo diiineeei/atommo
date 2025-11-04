@@ -53,7 +53,7 @@
                 <td>
                   <div class="d-flex align-center" style="gap: 12px;">
                     <v-avatar size="40" v-if="item.imagemURL">
-                      <v-img :src="item.imagemURL" alt="img" />
+                      <v-img :src="item.imagemURL" alt="img" contain />
                     </v-avatar>
                     <div class="d-flex flex-column">
                       <span class="font-weight-medium">{{ item.nome }}</span>

@@ -34,7 +34,7 @@
                             </v-container>
                             <template v-slot:prepend>
                                 <v-avatar size="85" rounded="0">
-                                    <v-img :src="produto.imagemURL"></v-img>
+                                    <v-img :src="produto.imagemURL" contain class="cart-img"></v-img>
                                 </v-avatar>
                             </template>
                             <template v-slot:append>
@@ -190,4 +190,7 @@ const productvalor = ((produto) => {
   .cart-wrapper :deep(.v-avatar){ width: 56px !important; height: 56px !important; }
   .cart-wrapper :deep(.v-list-item){ padding-left: 8px; padding-right: 6px; }
 }
+
+/* Centraliza miniaturas no carrinho */
+.cart-img :deep(img){ object-fit: contain; object-position: center center; }
 </style>

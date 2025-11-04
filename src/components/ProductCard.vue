@@ -20,7 +20,8 @@
           <v-img v-if="card.productimagemURL"
             :src="card.productimagemURL ? card.productimagemURL : 'https://storage.googleapis.com/proudcity/mebanenc/uploads/2021/03/placeholder-image.png'"
             height="200px"
-            cover
+            contain
+            class="product-img"
           />
           <v-container v-else class="activity-indicator-container d-flex justify-center align-center" height="200px" fluid>
           <v-progress-circular   indeterminate></v-progress-circular>
@@ -129,4 +130,8 @@
     .activity-indicator-container{ height: 140px; }
     .v-img{ height: 140px !important; }
   }
+
+  /* Centraliza e padroniza a área da imagem */
+  .product-img{ background: #ffffff; }
+  .product-img :deep(img){ object-position: center center !important; }
     </style>
