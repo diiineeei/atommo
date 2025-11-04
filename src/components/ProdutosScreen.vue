@@ -418,8 +418,8 @@ function onAddToCart(product) {
 .cart-panel--fixed{
   position: fixed;
   top: calc(var(--app-header-height, 96px) + 96px);
-  right: max(60px, calc((100vw - 1660px) / 2 + 20px));
-  width: clamp(320px, 26vw, 560px);
+  right: max(20px, calc((100vw - 1660px) / 2 + 12px));
+  width: clamp(320px, 24vw, 520px);
   max-width: calc(100vw - 64px);
   max-height: calc(100vh - var(--app-header-height, 96px) - 48px);
   z-index: 10;
@@ -458,8 +458,8 @@ function onAddToCart(product) {
 
   .cart-panel--fixed{
     top: calc(var(--app-header-height, 96px) + 96px);
-    right: max(28px, calc((100vw - 1280px) / 2 + 16px));
-    width: clamp(280px, 28vw, 340px);
+    right: max(16px, calc((100vw - 1280px) / 2 + 12px));
+    width: clamp(280px, 26vw, 340px);
   }
 }
 
