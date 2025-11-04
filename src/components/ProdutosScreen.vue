@@ -491,10 +491,7 @@ function onAddToCart(product) {
   .scanner-left{ width: 100%; }
   .scanner-search{ max-width: none; margin: 0; width: 100%; }
   .scanner-right{ width: 100%; justify-content: flex-end; }
-  .products-grid{
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 14px;
-  }
+  .products-grid{ gap: 12px; }
 }
 
 @media (max-width: 600px){
@@ -509,5 +506,14 @@ function onAddToCart(product) {
   /* redundante, mas mantém consistência em telas muito estreitas */
   .scanner-toolbar{ grid-template-columns: 1fr; }
   .scanner-right{ width: 100%; display: flex; justify-content: space-between; }
+}
+
+/* força 2 colunas estáveis na maioria dos celulares comuns */
+@media (max-width: 600px){
+  .products-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* telefones muito estreitos: 1 coluna para legibilidade */
+@media (max-width: 380px){
+  .products-grid{ grid-template-columns: 1fr; }
 }
 </style>
