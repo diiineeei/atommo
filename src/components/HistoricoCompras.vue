@@ -221,7 +221,7 @@ function proprietarioNome(id){
     // Trata ausências como "Não identificado"
     if (id == null || id === '' || id === 'NA' || id === 0 || id === '0') return 'Não identificado'
     const arr = Array.isArray(store.proprietarios) ? store.proprietarios : []
-    const found = arr.find(p => (p?.ID ?? p?.id) === id)
+    const found = arr.find(p => String(p?.ID ?? p?.id) === String(id))
     return found?.nome ? `${found.nome} (#${found?.ID ?? found?.id})` : `#${id}`
   }catch(_){ return `#${id}` }
 }
@@ -268,13 +268,26 @@ const resumoPagamentos = computed(()=>{
 const resumoRepasses = computed(()=>{
   const mapa = new Map()
   for(const p of (compras.value || [])){
-    const arr = Array.isArray(p?.repasses) ? p.repasses : []
-    for(const rp of arr){
-      const rawId = rp?.proprietarioId ?? rp?.ProprietarioID ?? rp?.proprietarioID ?? rp?.proprietario_id
-      const id = (rawId == null || rawId === '') ? 'NA' : rawId
-      const valor = Number(rp?.valor ?? 0)
-      if (valor){
-        mapa.set(id, (mapa.get(id) || 0) + valor)
+    const rep = Array.isArray(p?.repasses) ? p.repasses : []
+    if (rep.length){
+      for(const rp of rep){
+        const rawId = rp?.proprietarioId ?? rp?.ProprietarioID ?? rp?.proprietarioID ?? rp?.proprietario_id
+        const id = (rawId == null || rawId === '' || rawId === 0 || rawId === '0') ? 'NA' : rawId
+        const valor = Number(rp?.valor ?? 0)
+        if (valor){
+          mapa.set(String(id), (mapa.get(String(id)) || 0) + valor)
+        }
+      }
+    } else {
+      // Fallback: calcula pelos itens do pedido
+      const itens = Array.isArray(p?.itens) ? p.itens : []
+      for(const i of itens){
+        const rawId = i?.proprietarioId ?? i?.ProprietarioID ?? i?.proprietarioID ?? i?.proprietario_id
+        const id = (rawId == null || rawId === '' || rawId === 0 || rawId === '0') ? 'NA' : rawId
+        const valor = Number(i?.valor ?? 0) * Number(i?.quantidade ?? 0)
+        if (valor){
+          mapa.set(String(id), (mapa.get(String(id)) || 0) + valor)
+        }
       }
     }
   }
