@@ -6,10 +6,13 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint . --fix --ignore-path .gitignore"
+    "lint": "eslint . --fix --ignore-path .gitignore",
+    "electron:dev": "concurrently -k \"vite\" \"wait-on tcp:3000 && cross-env NODE_ENV=development ELECTRON_START_URL=http://localhost:3000 electron .\"",
+    "electron:build": "cross-env ELECTRON=true npm run build && electron-builder"
   },
   "dependencies": {
     "@mdi/font": "7.0.96",
+    "systeminformation": "^5.22.3",
     
     "axios": "^1.6.7",
     "core-js": "^3.29.0",
@@ -22,6 +25,11 @@
     "webfontloader": "^1.0.0"
   },
   "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^24.13.3",
+    "concurrently": "^8.2.2",
+    "wait-on": "^7.0.1",
+    "cross-env": "^7.0.3",
     "@vitejs/plugin-vue": "^5.0.4",
     "eslint": "^8.37.0",
     "eslint-plugin-vue": "^9.3.0",
@@ -29,6 +37,28 @@
     
     "vite": "^5.2.0",
     "vite-plugin-vuetify": "^2.1.0"
+  },
+  "main": "electron/main.js",
+  "build": {
+    "appId": "com.atommo.desktop",
+    "productName": "Atommo Desktop Health",
+    "files": [
+      "dist/**",
+      "electron/**",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "mac": { "category": "public.app-category.productivity" },
+    "win": { "target": "nsis" },
+    "linux": { "target": ["AppImage", "deb", "rpm"], "category": "Utility" }
+  },
+  "description": "Atommo Desktop Health – app desktop para monitoramento e envio de métricas.",
+  "author": {
+    "name": "Atommo",
+    "email": "contato@atommo.dev"
   },
   "engines": {
     "node": ">=18.0.0"

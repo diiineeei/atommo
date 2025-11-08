@@ -312,11 +312,38 @@ function fillScreen(){
 async function fillAgent(){
   const configuredBase = (window.APP_CONFIG && window.APP_CONFIG.agentBaseUrl) || (import.meta.env.VITE_AGENT_BASE_URL || '')
   const baseClean = String(configuredBase || '').replace(/\/$/,'')
-  if(!baseClean){ state.agentStatus = 'Não configurado'; return }
-
+  const isElectron = typeof window !== 'undefined' && !!(window.electronAPI && typeof window.electronAPI.getMetrics === 'function')
   const isAbsolute = /^https?:\/\//i.test(baseClean)
   const isRelative = baseClean.startsWith('/')
   const inDev = !!(import.meta && import.meta.env && import.meta.env.DEV)
+
+  async function pollElectron(){
+    try{
+      const j = await window.electronAPI.getMetrics()
+      const cpuLoad = j?.cpu?.load
+      const cpuTemp = j?.cpu?.temp
+      const memUsed = j?.mem?.used
+      const memTotal = j?.mem?.total
+      const swapUsed = j?.swap?.used
+      const swapTotal = j?.swap?.total
+      const disk = Array.isArray(j?.disks) ? (j.disks.find(d=> (d.mount||d.fs||d.path)==='/') || j.disks[0]) : j?.disk
+      const diskUsed = disk?.used, diskTotal = disk?.total
+      const net = j?.net
+      const gpuTemp = j?.gpu?.temp
+
+      state.agentStatus = 'Conectado (Desktop)'
+      state.agentCpuLoad = cpuLoad != null ? fmt.percent(Number(cpuLoad)) : '—'
+      state.agentCpuTemp = cpuTemp != null ? `${Number(cpuTemp).toFixed(0)} °C` : '—'
+      state.agentFanRpm = '—'
+      state.agentMem = (memUsed != null && memTotal != null) ? `${fmt.bytes(memUsed)} / ${fmt.bytes(memTotal)}` : '—'
+      state.agentSwap = (swapUsed != null && swapTotal != null) ? `${fmt.bytes(swapUsed)} / ${fmt.bytes(swapTotal)}` : '—'
+      state.agentDisk = (diskUsed != null && diskTotal != null) ? `${fmt.bytes(diskUsed)} / ${fmt.bytes(diskTotal)}` : '—'
+      state.agentGpuTemp = gpuTemp != null ? `${Number(gpuTemp).toFixed(0)} °C` : '—'
+      if (net && (typeof net.rx === 'number' || typeof net.tx === 'number')) {
+        state.agentNet = `${net.interface || 'net'}: ${fmt.rate(Number(net.rx)||0)} ↓ · ${fmt.rate(Number(net.tx)||0)} ↑`
+      }
+    }catch(_e){ state.agentStatus = 'Indisponível' }
+  }
 
   async function tryFetchJson(urls){
     for (const url of urls){
@@ -330,9 +357,10 @@ async function fillAgent(){
   }
 
   async function poll(){
-    // 1) Tentar agente custom (\"/health\") se apontado para um host absoluto (ex.: http://localhost:11420)
+    if (isElectron) { await pollElectron(); return }
+    // 1) Tentar agente custom ("/health") se apontado para um host absoluto (ex.: http://localhost:11420)
     const healthUrls = []
-    if (isAbsolute) healthUrls.push(baseClean + '/health')
+    if (baseClean && isAbsolute) healthUrls.push(baseClean + '/health')
     // fallback comum para agente local custom
     healthUrls.push('http://localhost:11420/health')
 
@@ -365,9 +393,9 @@ async function fillAgent(){
     // 2) Tentar Glances
     const glancesUrls = []
     // se base informado for absoluto (ex.: http://localhost:61208 ou http://host/glances)
-    if (isAbsolute) glancesUrls.push(baseClean + '/api/3/all')
+    if (baseClean && isAbsolute) glancesUrls.push(baseClean + '/api/3/all')
     // se for relativo e estamos em dev, usamos o proxy do Vite (ex.: '/glances')
-    if (isRelative && inDev) glancesUrls.push(baseClean + '/api/3/all')
+    if (baseClean && isRelative && inDev) glancesUrls.push(baseClean + '/api/3/all')
     // tentativas diretas no host local
     glancesUrls.push('http://localhost:61208/api/3/all','http://127.0.0.1:61208/api/3/all')
 

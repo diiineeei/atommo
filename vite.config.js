@@ -8,6 +8,9 @@ import { fileURLToPath, URL } from 'node:url'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // Para pacotes Electron, precisamos de caminhos relativos em produção
+  // Use ELECTRON=true no build do Electron para base './'
+  base: process.env.ELECTRON === 'true' ? './' : '/',
   plugins: [
     vue({
       template: { transformAssetUrls }
