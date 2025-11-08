@@ -130,7 +130,7 @@
       </v-col>
     </v-row>
 
-    
+
 
   </v-container>
 </template>
@@ -318,7 +318,7 @@ async function fillAgent(){
     // Se for claramente um proxy do Glances (ex.: "/glances") ou porta 61208, vá direto no endpoint do Glances
     if (looksLikeGlances) {
       try{
-        const r2 = await fetch(baseClean + '/api/3/all', { cache: 'no-store' })
+        const r2 = await fetch('http://localhost:61208/api/3/all', { cache: 'no-store' })
         if(!r2.ok) throw new Error('HTTP '+r2.status)
         const g = await r2.json()
         state.agentStatus = 'Conectado (Glances)'
