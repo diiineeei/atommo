@@ -4,12 +4,12 @@
     <v-col
       md="8"
       sm="6"
-      cols="1"
-      class="h-100 justify-center align-center d-none d-sm-flex pa-0"
+      cols="12"
+      class="login-left d-none d-sm-flex pa-0"
     >
-      <v-img src="@/assets/LoginImg.svg" class="w-75 h-75"></v-img>
+      <v-img src="@/assets/LoginImg.png" cover class="w-100 h-100"></v-img>
     </v-col>
-    <v-col cols="12" md="4" sm="6" class="bg-blue-accent-2 h-100 login-right pa-0">
+    <v-col cols="12" md="4" sm="6" class="bg-blue-accent-2 login-right pa-0">
       <v-container class="h-100 form-wrapper">
         <v-container class="h-25 justify-center align-start d-flex">
           <img src="@/assets/logo-simples-h.png" :width="300"/>
@@ -133,17 +133,19 @@ async function doLogin(){
       .replace(/\./g,' ')
       .replace(/(^|\s)\w/g, s => s.toUpperCase())
     const name = data?.user?.name || data?.name || derivedName || email
-    // tenta identificar nível de acesso (admin/cliente)
+    const id = data?.user?.id || payload?.sub || ''
+    // tenta identificar nível de acesso (admin/user)
     let nivelAcesso = data?.user?.nivelAcesso || data?.nivelAcesso || payload?.nivelAcesso || payload?.role || ''
     if (!nivelAcesso) {
       if (payload?.isAdmin === true) nivelAcesso = 'admin'
-      else nivelAcesso = 'cliente'
+      else nivelAcesso = 'user'
     }
 
+    userStore.id = id
     userStore.name = name
     userStore.email = email
     // defina nivelAcesso antes do token para salvar na sessão junto com o token
-    userStore.nivelAcesso = String(nivelAcesso || 'cliente')
+    userStore.nivelAcesso = String(nivelAcesso || 'user')
     userStore.token = token
 
     const redirect = route.query?.redirect || '/monitor'
@@ -157,11 +159,7 @@ async function doLogin(){
 </script>
 
 <style scoped>
-.loginRow {
-  width: 100%;
-  min-height: calc(100vh - var(--app-header-height, 96px));
-  align-items: stretch;
-}
+.loginRow { width: 100%; min-height: 100vh; align-items: stretch; }
 .form-wrapper {
   width: 90%;
   height: 100%;
@@ -170,9 +168,8 @@ async function doLogin(){
   justify-content: center;
 }
 
-.login-right{
-  min-height: calc(100vh - var(--app-header-height, 96px));
-  padding: 0 !important;
-}
+.login-right{ min-height: 100vh; padding: 0 !important; }
+
+.login-left{ min-height: 100vh; }
 
 </style>

@@ -8,7 +8,7 @@ axios.defaults.baseURL = API_BASE ? API_BASE.replace(/\/$/, '') : ''
 
 export const produtosAppStore = defineStore('atommo', () => {
   // Estado essencial de autenticação e gestão de usuários
-  const user = ref({ name: '', email: '', token: '', nivelAcesso: 'cliente' })
+  const user = ref({ id: '', name: '', email: '', token: '', nivelAcesso: 'cliente' })
   const users = ref([])
 
   // Loading global baseado em requisições Axios em andamento
@@ -34,12 +34,13 @@ export const produtosAppStore = defineStore('atommo', () => {
   }
 
   function saveSession(){
-    try{ localStorage.setItem('app.auth', JSON.stringify({ name: user.value.name||'', email: user.value.email||'', token: user.value.token||'', nivelAcesso: user.value.nivelAcesso||'cliente' })) }catch{}
+    try{ localStorage.setItem('app.auth', JSON.stringify({ id: user.value.id||'', name: user.value.name||'', email: user.value.email||'', token: user.value.token||'', nivelAcesso: user.value.nivelAcesso||'cliente' })) }catch{}
   }
   function loadSession(){
     try{
       const raw = localStorage.getItem('app.auth'); if(!raw) return
       const saved = JSON.parse(raw)
+      user.value.id = saved?.id || ''
       user.value.name = saved?.name || ''
       user.value.email = saved?.email || ''
       user.value.token = saved?.token || ''
@@ -48,7 +49,7 @@ export const produtosAppStore = defineStore('atommo', () => {
     }catch{}
   }
   function clearSession(){
-    user.value = { name: '', email: '', token: '', nivelAcesso: 'cliente' }
+    user.value = { id: '', name: '', email: '', token: '', nivelAcesso: 'cliente' }
     try{ localStorage.removeItem('app.auth') }catch{}
     applyAuthHeader('')
   }
@@ -103,9 +104,32 @@ export const produtosAppStore = defineStore('atommo', () => {
     }
   }
 
+  // Métricas de monitoramento
+  async function enviarMetricas(snapshot){
+    try{
+      const payload = { snapshot, userId: user.value.id || undefined, at: new Date().toISOString(), userAgent: navigator.userAgent }
+      const { data } = await axios.post('/metrics', payload, { headers: { 'Content-Type': 'application/json' } })
+      return { ok: true, data }
+    }catch(error){ console.error('Erro ao enviar métricas:', error); return { ok: false, error } }
+  }
+  async function listarMetricas(params = {}){
+    try{
+      const { userId, limit = 50 } = params
+      const { data } = await axios.get('/metrics', { params: { userId, limit } })
+      const list = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : [])
+      return { ok: true, items: list }
+    }catch(error){ console.error('Erro ao listar métricas:', error); return { ok: false, error } }
+  }
+  async function obterMetrica(id){
+    try{
+      const { data } = await axios.get(`/metrics/${id}`)
+      return { ok: true, item: data }
+    }catch(error){ console.error('Erro ao obter métrica:', error); return { ok: false, error } }
+  }
+
   // Init
   setupAxiosInterceptors();
   loadSession();
 
-  return { user, users, isAdmin, globalLoading, loadSession, clearSession, listarUsuarios, criarUsuario, atualizarUsuario, deletarUsuario }
+  return { user, users, isAdmin, globalLoading, loadSession, clearSession, listarUsuarios, criarUsuario, atualizarUsuario, deletarUsuario, enviarMetricas, listarMetricas, obterMetrica }
 })

@@ -2,6 +2,12 @@
   <v-container class="py-6">
     <h1 class="text-h4 font-weight-bold mb-4">Monitoramento – Atommo Desktop Health</h1>
 
+    <v-card class="mb-6" variant="elevated">
+      <v-card-text class="d-flex align-center" style="gap: 12px;">
+        <v-btn color="blue" @click="sendNow" :loading="sending">Enviar relatório</v-btn>
+      </v-card-text>
+    </v-card>
+
     <v-row>
       <v-col cols="12" md="6">
         <v-card variant="elevated" class="mb-4">
@@ -50,7 +56,7 @@
           <v-card-title class="text-h6">Agente Desktop (opcional)</v-card-title>
           <v-card-text>
             <v-alert type="info" variant="tonal" class="mb-2">
-              Configure window.APP_CONFIG.agentBaseUrl (ex.: http://localhost:11420)
+              Configure window.APP_CONFIG.agentBaseUrl (ex.: http://localhost:11420). Alternativa: <strong>Glances</strong> (http://localhost:61208) com <code>glances -w</code>
             </v-alert>
             <v-list density="compact">
               <v-list-item title="Status do agente" :subtitle="state.agentStatus" />
@@ -121,12 +127,15 @@
           </v-card-text>
         </v-card>
       </v-col>
-    </v-row>
+  </v-row>
+  
+    
   </v-container>
 </template>
 
 <script setup>
-import { reactive, onMounted, onBeforeUnmount } from 'vue'
+import { reactive, ref, onMounted, onBeforeUnmount } from 'vue'
+import { produtosAppStore } from '@/store/app'
 
 const fmt = {
   bytes(n) {
@@ -159,6 +168,8 @@ const state = reactive({
 
 let intervals = []
 let rafId = null
+const sending = ref(false)
+const store = produtosAppStore()
 
 async function fillSystem(){
   state.lang = `${navigator.language || '—'} (${(navigator.languages || []).join(', ') || '—'})`
@@ -325,13 +336,61 @@ async function fillAgent(){
       state.agentGpuTemp = gpuTemp != null ? `${Number(gpuTemp).toFixed(0)} °C` : '—'
       state.agentBatteryCycles = batteryCycles != null ? String(batteryCycles) : '—'
     }catch{
-      state.agentStatus = 'Indisponível'
+      // Fallback Glances
+      try{
+        const r2 = await fetch(base.replace(/\/$/,'') + '/api/3/all', { cache: 'no-store' })
+        if(!r2.ok) throw new Error('HTTP '+r2.status)
+        const g = await r2.json()
+        state.agentStatus = 'Conectado (Glances)'
+        const cpuLoad = g?.cpu?.total
+        const memUsed = g?.mem?.used
+        const memTotal = g?.mem?.total
+        const fs0 = Array.isArray(g?.fs) ? g.fs[0] : undefined
+        state.agentCpuLoad = cpuLoad != null ? fmt.percent(Number(cpuLoad)) : '—'
+        state.agentMem = (memUsed != null && memTotal != null) ? `${fmt.bytes(memUsed)} / ${fmt.bytes(memTotal)}` : '—'
+        state.agentDisk = (fs0?.used != null && fs0?.size != null) ? `${fmt.bytes(fs0.used)} / ${fmt.bytes(fs0.size)}` : '—'
+        state.agentCpuTemp = '—'; state.agentFanRpm='—'; state.agentSwap='—'; state.agentGpuTemp='—'; state.agentBatteryCycles='—'
+      }catch{
+        state.agentStatus = 'Indisponível'
+      }
     }
   }
   await poll(); intervals.push(setInterval(poll, 5000))
 }
 
-onMounted(() => {
+function buildSnapshot(){
+  const snap = {
+    at: new Date().toISOString(),
+    browser: {
+      os: state.os, browser: state.browser, arch: state.arch, lang: state.lang, online: state.online,
+      cores: state.cores, deviceMemory: state.deviceMemory, heapUsed: state.heapUsed, heapTotal: state.heapTotal,
+      eventLoopLag: state.eventLoopLag, fps: state.fps,
+      net: { type: state.netType, downlink: state.netDownlink, rtt: state.netRtt, saveData: state.netSaveData },
+      gpu: { renderer: state.gpu, vendor: state.gpuVendor, webgl: state.webgl },
+      storage: { quota: state.storageQuota, usage: state.storageUsage, persisted: state.storagePersisted },
+      screen: { res: state.screenRes, pixelRatio: state.pixelRatio, colorDepth: state.colorDepth },
+      battery: { level: state.batteryLevel, charging: state.batteryCharging, chargingTime: state.batteryChargingTime, dischargingTime: state.batteryDischargingTime }
+    }
+  }
+  if (state.agentStatus && state.agentStatus !== 'Não configurado' && state.agentStatus !== 'Indisponível') {
+    snap.agent = {
+      status: state.agentStatus,
+      cpu: { load: state.agentCpuLoad },
+      mem: state.agentMem,
+      swap: state.agentSwap,
+      disk: state.agentDisk,
+      gpu: { temp: state.agentGpuTemp },
+      battery: { cycles: state.agentBatteryCycles }
+    }
+  }
+  return snap
+}
+
+async function sendNow(){
+  try{ sending.value = true; await store.enviarMetricas(buildSnapshot()) } finally { sending.value = false }
+}
+
+onMounted(async () => {
   fillSystem(); fillCpuMem(); fillBattery(); fillNetwork(); fillGpu(); fillStorage(); fillScreen(); fillAgent()
 })
 
@@ -343,4 +402,3 @@ onBeforeUnmount(() => {
 
 <style scoped>
 </style>
-

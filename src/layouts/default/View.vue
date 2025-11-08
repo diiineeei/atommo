@@ -11,9 +11,9 @@
 
 <style scoped>
 .app-main{
-  /* Remove qualquer espaçamento adicional do v-main */
+  /* Ocupa sempre a altura inteira da viewport */
   padding-top: 0 !important;
   margin-top: 0 !important;
-  min-height: calc(100vh - var(--app-header-height, 96px));
+  min-height: 100vh;
 }
 </style>

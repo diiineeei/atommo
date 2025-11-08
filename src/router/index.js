@@ -19,6 +19,17 @@ const routes = [
         component: () => import('@/views/MonitorScreen.vue'),
       },
       {
+        path: 'monitor-historico',
+        name: 'MonitorHistorico',
+        component: () => import('@/views/MonitorHistory.vue'),
+      },
+      {
+        path: 'monitor-historico/:id',
+        name: 'MonitorHistoricoDetalhe',
+        component: () => import('@/views/MonitorHistoryDetail.vue'),
+        props: true,
+      },
+      {
         path: 'login',
         name: 'Login',
         component: () => import('@/views/LoginScreen.vue'),
@@ -93,7 +104,7 @@ router.beforeEach((to) => {
     return { name: 'Monitor' }
   }
   // protege rota de administração
-  if (to.name === 'Usuarios' && !store.isAdmin) {
+  if ((to.name === 'Usuarios' || to.name === 'MonitorHistorico') && !store.isAdmin) {
     return { name: 'Monitor' }
   }
   return true

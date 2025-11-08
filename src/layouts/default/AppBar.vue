@@ -1,6 +1,5 @@
 <template>
     <v-app-bar
-      color="blue-accent-2"
       elevation="8"
       height="96"
       class="app-bar"
@@ -74,6 +73,7 @@ const pages = computed(() => {
     { title: 'Monitoramento', to: { name: 'Monitor' } },
   ]
   if (store.isAdmin) {
+    base.push({ title: 'Histórico', to: { name: 'MonitorHistorico' } })
     base.push({ title: 'Usuários', to: { name: 'Usuarios' } })
   }
   base.push(isLoggedIn.value ? { title: 'Sair', action: 'logout' } : { title: 'Entrar', to: { name: 'Login' } })
@@ -97,6 +97,8 @@ const drawer = ref(false)
   width: 100%;
   backdrop-filter: blur(8px);
   font-size: 1.05rem;
+  background-color: rgb(69, 67, 139) !important;
+  color: #fff;
 }
 
 .app-bar__progress{
@@ -134,4 +136,8 @@ const drawer = ref(false)
     padding-right: 16px;
   }
 }
+
+/* Tabs e ícones em branco para contraste */
+.app-bar :deep(.v-tab) { color: #fff !important; }
+.app-bar :deep(.v-icon) { color: #fff !important; }
 </style>

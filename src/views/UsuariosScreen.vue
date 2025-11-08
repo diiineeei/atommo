@@ -71,7 +71,7 @@
       <v-card>
         <v-card-title class="text-h6">Excluir usuário</v-card-title>
         <v-card-text>
-          Tem certeza que deseja excluir "{{ usuarioExcluindo?.name }}"?
+          Tem certeza que deseja excluir "{{ (usuarioExcluindo && usuarioExcluindo.name) || '' }}"?
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -133,8 +133,8 @@ function abrirCriar(){
 
 function abrirEditar(u){
   editando.value = true
-  usuarioEditandoId = u?.ID ?? u?.id
-  form.value = { name: u?.name || '', email: u?.email || '', password: '', nivelAcesso: (u?.role || u?.nivelAcesso || 'user') }
+  usuarioEditandoId = (u && (u.ID != null ? u.ID : u.id))
+  form.value = { name: (u && u.name) || '', email: (u && u.email) || '', password: '', nivelAcesso: ((u && u.role) || (u && u.nivelAcesso) || 'user') }
   dialogAberta.value = true
 }
 
@@ -168,7 +168,7 @@ function confirmarExcluir(u){
 async function excluir(){
   try{
     excluindo.value = true
-    const id = usuarioExcluindo.value?.ID ?? usuarioExcluindo.value?.id
+    const id = (usuarioExcluindo.value && (usuarioExcluindo.value.ID != null ? usuarioExcluindo.value.ID : usuarioExcluindo.value.id))
     const { ok, notFound } = await store.deletarUsuario(id)
     if(ok || notFound){ notificar('Usuário excluído', 'success') }
   } finally {
