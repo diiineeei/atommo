@@ -8,7 +8,10 @@
     "preview": "vite preview",
     "lint": "eslint . --fix --ignore-path .gitignore",
     "electron:dev": "concurrently -k \"vite\" \"wait-on tcp:3000 && cross-env NODE_ENV=development ELECTRON_START_URL=http://localhost:3000 electron .\"",
-    "electron:build": "cross-env ELECTRON=true npm run build && electron-builder"
+    "electron:build": "cross-env ELECTRON=true npm run build && electron-builder",
+    "electron:build:win": "cross-env ELECTRON=true electron-builder --win",
+    "electron:build:linux": "cross-env ELECTRON=true electron-builder --linux",
+    "electron:build:mac": "cross-env ELECTRON=true electron-builder --mac"
   },
   "dependencies": {
     "@mdi/font": "7.0.96",

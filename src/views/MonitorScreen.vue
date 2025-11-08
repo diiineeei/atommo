@@ -55,9 +55,6 @@
         <v-card variant="elevated" class="mb-4">
           <v-card-title class="text-h6">Agente Desktop (opcional)</v-card-title>
           <v-card-text>
-            <v-alert type="info" variant="tonal" class="mb-2">
-              Configure window.APP_CONFIG.agentBaseUrl (ex.: http://localhost:11420). Alternativa: <strong>Glances</strong> (http://localhost:61208) com <code>glances -w</code>
-            </v-alert>
             <v-list density="compact">
               <v-list-item title="Status do agente" :subtitle="state.agentStatus" />
               <v-list-item title="CPU uso" :subtitle="state.agentCpuLoad" />
@@ -322,6 +319,7 @@ async function fillAgent(){
       const j = await window.electronAPI.getMetrics()
       const cpuLoad = j?.cpu?.load
       const cpuTemp = j?.cpu?.temp
+      const fanRpm = j?.cpu?.fanRpm ?? j?.fanRpm
       const memUsed = j?.mem?.used
       const memTotal = j?.mem?.total
       const swapUsed = j?.swap?.used
@@ -330,15 +328,17 @@ async function fillAgent(){
       const diskUsed = disk?.used, diskTotal = disk?.total
       const net = j?.net
       const gpuTemp = j?.gpu?.temp
+      const batteryCycles = j?.battery?.cycles ?? j?.batteryCycles
 
       state.agentStatus = 'Conectado (Desktop)'
       state.agentCpuLoad = cpuLoad != null ? fmt.percent(Number(cpuLoad)) : '—'
       state.agentCpuTemp = cpuTemp != null ? `${Number(cpuTemp).toFixed(0)} °C` : '—'
-      state.agentFanRpm = '—'
+      state.agentFanRpm = fanRpm != null ? String(fanRpm) : '—'
       state.agentMem = (memUsed != null && memTotal != null) ? `${fmt.bytes(memUsed)} / ${fmt.bytes(memTotal)}` : '—'
       state.agentSwap = (swapUsed != null && swapTotal != null) ? `${fmt.bytes(swapUsed)} / ${fmt.bytes(swapTotal)}` : '—'
       state.agentDisk = (diskUsed != null && diskTotal != null) ? `${fmt.bytes(diskUsed)} / ${fmt.bytes(diskTotal)}` : '—'
       state.agentGpuTemp = gpuTemp != null ? `${Number(gpuTemp).toFixed(0)} °C` : '—'
+      state.agentBatteryCycles = batteryCycles != null ? String(batteryCycles) : '—'
       if (net && (typeof net.rx === 'number' || typeof net.tx === 'number')) {
         state.agentNet = `${net.interface || 'net'}: ${fmt.rate(Number(net.rx)||0)} ↓ · ${fmt.rate(Number(net.tx)||0)} ↑`
       }
