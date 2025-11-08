@@ -9,13 +9,25 @@
     <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
 
     <template v-if="metric">
+      <!-- Metadados da captura -->
       <v-card class="mb-4" variant="elevated">
+        <v-card-title class="text-h6">Metadados</v-card-title>
         <v-card-text>
-          <div class="d-flex flex-wrap" style="gap: 16px;">
-            <div><strong>ID:</strong> {{ metric.id }}</div>
-            <div><strong>Data/Hora:</strong> {{ formatDate((metric.snapshot && metric.snapshot.at) || metric.at) }}</div>
-            <div><strong>Usuário:</strong> {{ metric.userEmail || metric.userId }}</div>
-          </div>
+          <v-list density="compact">
+            <v-list-item title="ID" :subtitle="metric.id || '—'" />
+            <v-list-item title="Usuário" :subtitle="metric.userEmail || metric.userId || '—'" />
+            <v-list-item title="Data/Hora (snapshot)" :subtitle="formatDate(metric.snapshot?.at || metric.at)" />
+            <v-list-item title="Criado em" :subtitle="formatDate(metric.created_at || metric.createdAt || metric.at)" />
+            <v-list-item title="IP (parcial)" :subtitle="metric.ip_trunc || '—'" />
+            <v-list-item>
+              <template #title>Agente de usuário</template>
+              <template #subtitle>
+                <span v-if="!showUA">{{ truncate(metric.userAgent, 80) }}</span>
+                <span v-else>{{ metric.userAgent || '—' }}</span>
+                <v-btn size="x-small" variant="text" color="blue" @click="showUA = !showUA">{{ showUA ? 'menos' : 'mais' }}</v-btn>
+              </template>
+            </v-list-item>
+          </v-list>
         </v-card-text>
       </v-card>
 
@@ -81,15 +93,35 @@
               </v-list>
             </v-card-text>
           </v-card>
+
+          <v-card class="mb-4" variant="elevated">
+            <v-card-title class="text-h6">Agente Desktop</v-card-title>
+            <v-card-text>
+              <v-list density="compact">
+                <v-list-item title="Status" :subtitle="(a.status) || '—'" />
+                <v-list-item title="CPU (uso)" :subtitle="(a.cpu && (a.cpu.load ?? a.cpu.percent)) || '—'" />
+                <v-list-item title="CPU (temp)" :subtitle="(a.cpu && a.cpu.temp) || '—'" />
+                <v-list-item title="Ventoinha (RPM)" :subtitle="(a.cpu && a.cpu.fanRpm) || '—'" />
+                <v-list-item title="Memória" :subtitle="(a.mem && (a.mem.used!=null && a.mem.total!=null ? bytes(a.mem.used)+' / '+bytes(a.mem.total) : (a.mem.text || a.mem))) || a.mem || '—'" />
+                <v-list-item title="Swap" :subtitle="(a.swap && (a.swap.used!=null && a.swap.total!=null ? bytes(a.swap.used)+' / '+bytes(a.swap.total) : (a.swap.text || a.swap))) || a.swap || '—'" />
+                <v-list-item title="Disco /" :subtitle="(a.disk && (a.disk.used!=null && a.disk.total!=null ? bytes(a.disk.used)+' / '+bytes(a.disk.total) : (a.disk.text || a.disk))) || a.disk || '—'" />
+                <v-list-item title="GPU (temp)" :subtitle="(a.gpu && a.gpu.temp) || '—'" />
+                <v-list-item title="Bateria (ciclos)" :subtitle="(a.battery && a.battery.cycles) || '—'" />
+              </v-list>
+            </v-card-text>
+          </v-card>
         </v-col>
       </v-row>
-
-      <v-card variant="elevated">
-        <v-card-title class="text-h6">JSON completo</v-card-title>
-        <v-card-text>
-          <pre class="json">{{ pretty(metric) }}</pre>
-        </v-card-text>
-      </v-card>
+      
+      <!-- JSON opcional para depuração -->
+      <v-expansion-panels class="mb-4">
+        <v-expansion-panel>
+          <v-expansion-panel-title>JSON completo (depuração)</v-expansion-panel-title>
+          <v-expansion-panel-text>
+            <pre class="json">{{ pretty(metric) }}</pre>
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+      </v-expansion-panels>
     </template>
   </v-container>
 </template>
@@ -107,9 +139,16 @@ const loading = ref(false)
 const error = ref('')
 
 const b = computed(() => (metric.value && metric.value.snapshot && metric.value.snapshot.browser) || {})
+const a = computed(() => (metric.value?.snapshot?.agent) || metric.value?.agent || {})
+const showUA = ref(false)
 
 function formatDate(iso){ try { return new Date(iso).toLocaleString() } catch (e) { return String(iso||'') } }
 function pretty(obj){ try{ return JSON.stringify(obj, null, 2) } catch (e) { return String(obj) } }
+function truncate(s, len = 80){ s = s || ''; return s.length>len ? s.slice(0,len-1)+'…' : s }
+function bytes(n){
+  if (typeof n !== 'number' || !isFinite(n)) return '—'
+  const u=['B','KB','MB','GB','TB']; let i=0,v=n; while(v>=1024&&i<u.length-1){v/=1024;i++} return `${v.toFixed(v<10?2:1)} ${u[i]}`
+}
 
 async function load(){
   loading.value = true; error.value = ''

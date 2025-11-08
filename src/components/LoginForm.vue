@@ -69,7 +69,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, nextTick } from "vue";
 import { produtosAppStore } from "@/store/app";
 import router from '@/router'
 import { useRoute } from 'vue-router'
@@ -148,8 +148,10 @@ async function doLogin(){
     userStore.nivelAcesso = String(nivelAcesso || 'user')
     userStore.token = token
 
-    const redirect = route.query?.redirect || '/monitor'
-    router.push(redirect)
+    // Aguarda reatividade propagar para os guards enxergarem o token
+    await nextTick()
+    const redirect = route.query?.redirect || { name: 'Monitor2' }
+    router.replace(redirect)
   } catch (err) {
     errorMsg.value = err?.response?.data?.message || 'Falha no login. Verifique suas credenciais.'
   } finally {

@@ -53,6 +53,13 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      // Proxy para Glances (http://localhost:61208) evitando CORS
+      '/glances': {
+        target: 'http://localhost:61208',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/glances/, ''),
+      },
     },
   },
 })

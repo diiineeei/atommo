@@ -127,9 +127,10 @@
           </v-card-text>
         </v-card>
       </v-col>
-  </v-row>
-  
+    </v-row>
+
     
+
   </v-container>
 </template>
 
@@ -309,7 +310,66 @@ function fillScreen(){
 async function fillAgent(){
   const base = (window.APP_CONFIG && window.APP_CONFIG.agentBaseUrl) || ''
   if(!base){ state.agentStatus = 'Não configurado'; return }
+  const baseClean = base.replace(/\/$/,'')
+  const looksLikeGlances = /(?:(^|\/)glances\/?$)|(?:\b61208\b)/.test(baseClean)
   async function poll(){
+    // Se for claramente um proxy do Glances (ex.: "/glances") ou porta 61208, vá direto no endpoint do Glances
+    if (looksLikeGlances) {
+      try{
+        const r2 = await fetch(baseClean + '/api/3/all', { cache: 'no-store' })
+        if(!r2.ok) throw new Error('HTTP '+r2.status)
+        const g = await r2.json()
+        state.agentStatus = 'Conectado (Glances)'
+
+        // CPU load
+        const cpuLoad = g?.cpu?.total ?? g?.quicklook?.cpu
+        state.agentCpuLoad = cpuLoad != null ? fmt.percent(Number(cpuLoad)) : '—'
+
+        // Memory
+        const memUsed = g?.mem?.used
+        const memTotal = g?.mem?.total
+        state.agentMem = (memUsed != null && memTotal != null) ? `${fmt.bytes(memUsed)} / ${fmt.bytes(memTotal)}` : '—'
+
+        // Swap
+        const swapUsed = g?.memswap?.used
+        const swapTotal = g?.memswap?.total
+        state.agentSwap = (swapUsed != null && swapTotal != null) ? `${fmt.bytes(swapUsed)} / ${fmt.bytes(swapTotal)}` : '—'
+
+        // Disk (prefer root mountpoint '/')
+        const fsList = Array.isArray(g?.fs) ? g.fs : []
+        const rootFs = fsList.find(d => d?.mnt_point === '/') || fsList[0]
+        state.agentDisk = (rootFs?.used != null && rootFs?.size != null) ? `${fmt.bytes(rootFs.used)} / ${fmt.bytes(rootFs.size)}` : '—'
+
+        // CPU temperature from sensors (best-effort)
+        const sensors = Array.isArray(g?.sensors) ? g.sensors : []
+        const tempSensors = sensors.filter(s => (s?.type || '').toLowerCase().includes('temp'))
+        const pickCpuTemp = () => {
+          const priority = ['Tctl','Package id 0','Tdie','Tccd1','edge']
+          for (const name of priority) {
+            const s = tempSensors.find(x => x?.label === name)
+            if (s?.value != null) return Number(s.value)
+          }
+          if (tempSensors.length) {
+            const max = Math.max(...tempSensors.map(x => Number(x?.value) || -Infinity))
+            return Number.isFinite(max) ? max : undefined
+          }
+          return undefined
+        }
+        const cpuTemp = pickCpuTemp()
+        state.agentCpuTemp = cpuTemp != null ? `${cpuTemp.toFixed(0)} °C` : '—'
+
+        // GPU temperature if available (Glances GPU plugin)
+        const gpuTemp = Array.isArray(g?.gpu) && g.gpu[0]?.temperature != null ? Number(g.gpu[0].temperature) : undefined
+        state.agentGpuTemp = gpuTemp != null ? `${gpuTemp.toFixed(0)} °C` : '—'
+
+        // Not available from Glances default payload in many setups
+        state.agentFanRpm = '—'
+        state.agentBatteryCycles = '—'
+        return
+      }catch{
+        state.agentStatus = 'Indisponível'; return
+      }
+    }
     try{
       const res = await fetch(base.replace(/\/$/,'') + '/health', { cache: 'no-store' })
       if(!res.ok) throw new Error('HTTP '+res.status)
@@ -342,14 +402,51 @@ async function fillAgent(){
         if(!r2.ok) throw new Error('HTTP '+r2.status)
         const g = await r2.json()
         state.agentStatus = 'Conectado (Glances)'
-        const cpuLoad = g?.cpu?.total
+
+        // CPU load
+        const cpuLoad = g?.cpu?.total ?? g?.quicklook?.cpu
+        state.agentCpuLoad = cpuLoad != null ? fmt.percent(Number(cpuLoad)) : '—'
+
+        // Memory
         const memUsed = g?.mem?.used
         const memTotal = g?.mem?.total
-        const fs0 = Array.isArray(g?.fs) ? g.fs[0] : undefined
-        state.agentCpuLoad = cpuLoad != null ? fmt.percent(Number(cpuLoad)) : '—'
         state.agentMem = (memUsed != null && memTotal != null) ? `${fmt.bytes(memUsed)} / ${fmt.bytes(memTotal)}` : '—'
-        state.agentDisk = (fs0?.used != null && fs0?.size != null) ? `${fmt.bytes(fs0.used)} / ${fmt.bytes(fs0.size)}` : '—'
-        state.agentCpuTemp = '—'; state.agentFanRpm='—'; state.agentSwap='—'; state.agentGpuTemp='—'; state.agentBatteryCycles='—'
+
+        // Swap
+        const swapUsed = g?.memswap?.used
+        const swapTotal = g?.memswap?.total
+        state.agentSwap = (swapUsed != null && swapTotal != null) ? `${fmt.bytes(swapUsed)} / ${fmt.bytes(swapTotal)}` : '—'
+
+        // Disk (prefer root mountpoint '/')
+        const fsList = Array.isArray(g?.fs) ? g.fs : []
+        const rootFs = fsList.find(d => d?.mnt_point === '/') || fsList[0]
+        state.agentDisk = (rootFs?.used != null && rootFs?.size != null) ? `${fmt.bytes(rootFs.used)} / ${fmt.bytes(rootFs.size)}` : '—'
+
+        // CPU temperature from sensors (best-effort)
+        const sensors = Array.isArray(g?.sensors) ? g.sensors : []
+        const tempSensors = sensors.filter(s => (s?.type || '').toLowerCase().includes('temp'))
+        const pickCpuTemp = () => {
+          const priority = ['Tctl','Package id 0','Tdie','Tccd1','edge']
+          for (const name of priority) {
+            const s = tempSensors.find(x => x?.label === name)
+            if (s?.value != null) return Number(s.value)
+          }
+          if (tempSensors.length) {
+            const max = Math.max(...tempSensors.map(x => Number(x?.value) || -Infinity))
+            return Number.isFinite(max) ? max : undefined
+          }
+          return undefined
+        }
+        const cpuTemp = pickCpuTemp()
+        state.agentCpuTemp = cpuTemp != null ? `${cpuTemp.toFixed(0)} °C` : '—'
+
+        // GPU temperature if available (Glances GPU plugin)
+        const gpuTemp = Array.isArray(g?.gpu) && g.gpu[0]?.temperature != null ? Number(g.gpu[0].temperature) : undefined
+        state.agentGpuTemp = gpuTemp != null ? `${gpuTemp.toFixed(0)} °C` : '—'
+
+        // Not available from Glances default payload in many setups
+        state.agentFanRpm = '—'
+        state.agentBatteryCycles = '—'
       }catch{
         state.agentStatus = 'Indisponível'
       }

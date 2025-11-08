@@ -9,7 +9,8 @@
   <script>
     window.APP_CONFIG = {
       apiBaseUrl: 'http://localhost:8080', // backend local em dev
-      agentBaseUrl: '' // ex.: http://localhost:11420
+      // Use '/glances' em dev para passar pelo proxy do Vite sem CORS
+      agentBaseUrl: '/glances' // ex. direto: http://localhost:11420 ou http://localhost:61208
     };
   </script>
   
