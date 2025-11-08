@@ -10,28 +10,13 @@ const routes = [
     children: [
       {
         path: '',
-        name: 'Produtos',
-        component: () => import('@/views/ProdutosScreen.vue'),
+        name: 'Monitor',
+        component: () => import('@/views/MonitorScreen.vue'),
       },
       {
-        path: 'produtos',
-        name: 'Produtos2',
-        component: () => import('@/views/ProdutosScreen.vue'),
-      },
-      {
-        path: 'home',
-        name: 'Home',
-        component: () => import('@/views/HomeScreen.vue'),
-      },
-      {
-        path: 'carrinho',
-        name: 'Carrinho',
-        component: () => import('@/views/CarrinhoCompras.vue'),
-      },
-      {
-        path: 'historico',
-        name: 'Historico',
-        component: () => import('@/views/HistoricoScreen.vue'),
+        path: 'monitor',
+        name: 'Monitor2',
+        component: () => import('@/views/MonitorScreen.vue'),
       },
       {
         path: 'login',
@@ -42,26 +27,6 @@ const routes = [
         path: 'usuarios',
         name: 'Usuarios',
         component: () => import('@/views/UsuariosScreen.vue'),
-      },
-      {
-        path: 'config',
-        name: 'ConfigEmpresa',
-        component: () => import('@/views/ConfigEmpresaScreen.vue'),
-      },
-      {
-        path: 'proprietarios',
-        name: 'Proprietarios',
-        component: () => import('@/views/ProprietariosScreen.vue'),
-      },
-      // {
-      //   path: '/produtos',
-      //   name: 'Produtos',
-      //   component: () => import('@/views/ProdutosScreen.vue'),
-      // },
-      {
-        path: 'cadastro',
-        name: 'Cadastro',
-        component: () => import('@/views/CadastroScreen.vue'),
       },
     ],
   },
@@ -102,11 +67,11 @@ function installAuthInterceptor() {
           }
         }
         if (status === 403) {
-          // Acesso negado — perfil insuficiente (provável vendedor tentando rota de admin)
+          // Acesso negado — perfil insuficiente (provável cliente tentando rota de admin)
           try { alert('Acesso negado. É necessário perfil administrador.') } catch (_) {}
           const current = router.currentRoute.value
-          if (current?.name === 'Usuarios' || current?.name === 'Cadastro') {
-            router.replace({ name: 'Produtos2' })
+          if (current?.name === 'Usuarios') {
+            router.replace({ name: 'Monitor' })
           }
         }
       } catch (_) { /* noop */ }
@@ -125,20 +90,11 @@ router.beforeEach((to) => {
     return { name: 'Login', query: { redirect: to.fullPath } }
   }
   if (isAuthenticated && to.name === 'Login') {
-    return { name: 'Produtos2' }
+    return { name: 'Monitor' }
   }
   // protege rota de administração
   if (to.name === 'Usuarios' && !store.isAdmin) {
-    return { name: 'Produtos2' }
-  }
-  if (to.name === 'Cadastro' && !store.isAdmin) {
-    return { name: 'Produtos2' }
-  }
-  if (to.name === 'ConfigEmpresa' && !store.isAdmin) {
-    return { name: 'Produtos2' }
-  }
-  if (to.name === 'Proprietarios' && !store.isAdmin) {
-    return { name: 'Produtos2' }
+    return { name: 'Monitor' }
   }
   return true
 })

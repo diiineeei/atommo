@@ -15,9 +15,9 @@
           <img src="@/assets/logo-simples-h.png" :width="300"/>
         </v-container>
         <v-container class="pa-0 my-5">
-          <p class="text-h5 font-weight-medium">Bem Vindo a Adega do Vilão</p>
+          <p class="text-h5 font-weight-medium">Bem-vindo ao Atommo Desktop Health</p>
           <p class="text-subtitle-1">
-            Acesse sua conta e faça muitas vendas!
+            Faça login para acessar o monitoramento.
           </p>
         </v-container>
         <v-form @submit.prevent="doLogin" ref="form">
@@ -108,12 +108,8 @@ async function doLogin(){
   }
   try{
     loading.value = true
-    const { data } = await axios.post('https://app-lojinha-990926851328.us-central1.run.app/api/signin', {
-      email,
-      password
-    }, {
-      headers: { 'Content-Type': 'application/json' }
-    })
+    const API_BASE = (window.APP_CONFIG && window.APP_CONFIG.apiBaseUrl) || (import.meta.env.VITE_API_BASE_URL || '')
+    const { data } = await axios.post((API_BASE?.replace(/\/$/,'') || '') + '/auth/login', { email, password }, { headers: { 'Content-Type': 'application/json' } })
 
     // Tenta obter token e nome de diferentes formatos de resposta
     const token = data?.token || data?.accessToken || data?.jwt || ''
@@ -137,20 +133,20 @@ async function doLogin(){
       .replace(/\./g,' ')
       .replace(/(^|\s)\w/g, s => s.toUpperCase())
     const name = data?.user?.name || data?.name || derivedName || email
-    // tenta identificar nível de acesso (admin/vendedor)
+    // tenta identificar nível de acesso (admin/cliente)
     let nivelAcesso = data?.user?.nivelAcesso || data?.nivelAcesso || payload?.nivelAcesso || payload?.role || ''
     if (!nivelAcesso) {
       if (payload?.isAdmin === true) nivelAcesso = 'admin'
-      else nivelAcesso = 'vendedor'
+      else nivelAcesso = 'cliente'
     }
 
     userStore.name = name
     userStore.email = email
     // defina nivelAcesso antes do token para salvar na sessão junto com o token
-    userStore.nivelAcesso = String(nivelAcesso || 'vendedor')
+    userStore.nivelAcesso = String(nivelAcesso || 'cliente')
     userStore.token = token
 
-    const redirect = route.query?.redirect || '/produtos'
+    const redirect = route.query?.redirect || '/monitor'
     router.push(redirect)
   } catch (err) {
     errorMsg.value = err?.response?.data?.message || 'Falha no login. Verifique suas credenciais.'

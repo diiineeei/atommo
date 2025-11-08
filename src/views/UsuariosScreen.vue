@@ -30,8 +30,12 @@
           <td>{{ u.name }}</td>
           <td>{{ u.email }}</td>
           <td>
-            <v-chip size="small" :color="(u.nivelAcesso||'').toLowerCase()==='admin' ? 'deep-purple' : 'grey'" variant="tonal">
-              {{ (u.nivelAcesso || 'vendedor') }}
+            <v-chip
+              size="small"
+              :color="(String(u.role||u.nivelAcesso||'user').toLowerCase()==='admin') ? 'deep-purple' : 'grey'"
+              variant="tonal"
+            >
+              {{ String(u.role || u.nivelAcesso || 'user') }}
             </v-chip>
           </td>
           <td>
@@ -51,7 +55,7 @@
             <v-text-field v-model="form.name" label="Nome" variant="outlined" class="mb-3" :rules="[v=>!!v||'Obrigatório']" />
             <v-text-field v-model="form.email" label="Email" variant="outlined" class="mb-3" :rules="[v=>/.+@.+\..+/.test(v)||'Email inválido']" />
             <v-text-field v-model="form.password" :type="mostrarSenha?'text':'password'" :append-inner-icon="mostrarSenha?'mdi-eye-off':'mdi-eye'" @click:append-inner="mostrarSenha=!mostrarSenha" :label="editando? 'Nova senha (opcional)':'Senha'" variant="outlined" class="mb-3" :rules="editando?[]:[v=>!!v||'Obrigatório']" />
-            <v-select v-model="form.nivelAcesso" :items="['admin','vendedor']" label="Nível de acesso" variant="outlined" class="mb-1" />
+            <v-select v-model="form.nivelAcesso" :items="['admin','user']" label="Nível de acesso" variant="outlined" class="mb-1" />
           </v-form>
         </v-card-text>
         <v-card-actions>
@@ -117,20 +121,20 @@ const formValido = ref(true)
 const formRef = ref(null)
 const mostrarSenha = ref(false)
 const editando = ref(false)
-const form = ref({ name: '', email: '', password: '', nivelAcesso: 'vendedor' })
+const form = ref({ name: '', email: '', password: '', nivelAcesso: 'user' })
 let usuarioEditandoId = null
 
 function abrirCriar(){
   editando.value = false
   usuarioEditandoId = null
-  form.value = { name: '', email: '', password: '', nivelAcesso: 'vendedor' }
+  form.value = { name: '', email: '', password: '', nivelAcesso: 'user' }
   dialogAberta.value = true
 }
 
 function abrirEditar(u){
   editando.value = true
   usuarioEditandoId = u?.ID ?? u?.id
-  form.value = { name: u?.name || '', email: u?.email || '', password: '', nivelAcesso: u?.nivelAcesso || 'vendedor' }
+  form.value = { name: u?.name || '', email: u?.email || '', password: '', nivelAcesso: (u?.role || u?.nivelAcesso || 'user') }
   dialogAberta.value = true
 }
 
@@ -176,4 +180,3 @@ async function excluir(){
 
 <style scoped>
 </style>
-

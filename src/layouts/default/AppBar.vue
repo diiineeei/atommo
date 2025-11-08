@@ -5,8 +5,8 @@
       height="96"
       class="app-bar"
     >
-    <v-app-bar-title >
-      <img src="@/assets/logo-h.png" :width="150"/>
+    <v-app-bar-title>
+      <span class="app-title">Atommo Desktop Health</span>
     </v-app-bar-title>
     <!-- Nome do usuário logado no centro -->
     <div v-if="userStore?.name" class="app-user d-none d-sm-flex">
@@ -71,14 +71,10 @@ const isLoggedIn = computed(() => !!userStore.token)
 
 const pages = computed(() => {
   const base = [
-    { title: 'Produtos', to: { name: 'Produtos2' } },
-    { title: 'Histórico', to: { name: 'Historico' } },
-    { title: 'Carrinho', to: { name: 'Carrinho' } },
+    { title: 'Monitoramento', to: { name: 'Monitor' } },
   ]
   if (store.isAdmin) {
-    base.splice(2, 0, { title: 'Cadastrar', to: { name: 'Cadastro' } })
-    base.splice(3, 0, { title: 'Usuários', to: { name: 'Usuarios' } })
-    base.splice(4, 0, { title: 'Admin', to: { name: 'ConfigEmpresa' } })
+    base.push({ title: 'Usuários', to: { name: 'Usuarios' } })
   }
   base.push(isLoggedIn.value ? { title: 'Sair', action: 'logout' } : { title: 'Entrar', to: { name: 'Login' } })
   return base
@@ -123,6 +119,12 @@ const drawer = ref(false)
   pointer-events: none;
   color: #fff;
   font-weight: 600;
+}
+
+.app-title{
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.2px;
 }
 
 @media (max-width: 600px){

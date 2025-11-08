@@ -1,18 +1,24 @@
 <template>
   <v-app>
     <div class="app-shell">
-      <header class="app-shell__nav">
+      <header v-if="isLoggedIn" class="app-shell__nav">
         <AppBar />
       </header>
-      <main class="app-shell__main">
+      <main class="app-shell__main" :style="{ paddingTop: isLoggedIn ? 'var(--app-header-height, 96px)' : '0' }">
         <router-view />
       </main>
     </div>
   </v-app>
+  
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import AppBar from '@/layouts/default/AppBar.vue'
+import { produtosAppStore } from '@/store/app'
+
+const store = produtosAppStore()
+const isLoggedIn = computed(() => !!store.user.token)
 </script>
 
 <style>
