@@ -105,6 +105,7 @@
                 <v-list-item title="Memória" :subtitle="(a.mem && (a.mem.used!=null && a.mem.total!=null ? bytes(a.mem.used)+' / '+bytes(a.mem.total) : (a.mem.text || a.mem))) || a.mem || '—'" />
                 <v-list-item title="Swap" :subtitle="(a.swap && (a.swap.used!=null && a.swap.total!=null ? bytes(a.swap.used)+' / '+bytes(a.swap.total) : (a.swap.text || a.swap))) || a.swap || '—'" />
                 <v-list-item title="Disco /" :subtitle="(a.disk && (a.disk.used!=null && a.disk.total!=null ? bytes(a.disk.used)+' / '+bytes(a.disk.total) : (a.disk.text || a.disk))) || a.disk || '—'" />
+                <v-list-item title="Rede (agente)" :subtitle="a.net || '—'" />
                 <v-list-item title="GPU (temp)" :subtitle="(a.gpu && a.gpu.temp) || '—'" />
                 <v-list-item title="Bateria (ciclos)" :subtitle="(a.battery && a.battery.cycles) || '—'" />
               </v-list>

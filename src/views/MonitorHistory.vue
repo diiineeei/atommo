@@ -110,6 +110,7 @@
                     <v-list-item title="Memória" :subtitle="(m.snapshot?.agent?.mem) || (m.agent?.mem) || '—'" />
                     <v-list-item title="Swap" :subtitle="(m.snapshot?.agent?.swap) || (m.agent?.swap) || '—'" />
                     <v-list-item title="Disco /" :subtitle="(m.snapshot?.agent?.disk) || (m.agent?.disk) || '—'" />
+                    <v-list-item title="Rede (agente)" :subtitle="(m.snapshot?.agent?.net) || (m.agent?.net) || '—'" />
                     <v-list-item title="GPU (temp)" :subtitle="(m.snapshot?.agent?.gpu?.temp) || (m.agent?.gpu?.temp) || '—'" />
                     <v-list-item title="Bateria (ciclos)" :subtitle="(m.snapshot?.agent?.battery?.cycles) || (m.agent?.battery?.cycles) || '—'" />
                   </v-list>

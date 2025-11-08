@@ -43,8 +43,8 @@
           <v-card-text>
             <v-list density="compact">
               <v-list-item title="Tipo efetivo" :subtitle="state.netType" />
-              <v-list-item title="Downlink (Mbps)" :subtitle="state.netDownlink" />
-              <v-list-item title="RTT (ms)" :subtitle="state.netRtt" />
+              <v-list-item title="Downlink (Mbps)" :subtitle="(typeof state.netDownlink === 'number' ? state.netDownlink.toFixed(2) : '—')" />
+              <v-list-item title="RTT (ms)" :subtitle="(typeof state.netRtt === 'number' ? String(state.netRtt) : '—')" />
               <v-list-item title="Economia de dados" :subtitle="state.netSaveData ? 'Ativado' : 'Não'" />
             </v-list>
           </v-card-text>
@@ -66,6 +66,7 @@
               <v-list-item title="Memória" :subtitle="state.agentMem" />
               <v-list-item title="Swap" :subtitle="state.agentSwap" />
               <v-list-item title="Disco /" :subtitle="state.agentDisk" />
+              <v-list-item title="Rede (agente)" :subtitle="state.agentNet" />
               <v-list-item title="GPU temperatura" :subtitle="state.agentGpuTemp" />
               <v-list-item title="Bateria (ciclos)" :subtitle="state.agentBatteryCycles" />
             </v-list>
@@ -153,18 +154,19 @@ const fmt = {
     const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), r = s%60
     return [h && `${h}h`, (h||m) && `${m}m`, `${r}s`].filter(Boolean).join(' ')
   },
-  percent(n){ return (typeof n === 'number' && isFinite(n)) ? `${n.toFixed(1)}%` : '—' }
+  percent(n){ return (typeof n === 'number' && isFinite(n)) ? `${n.toFixed(1)}%` : '—' },
+  rate(n){ return (typeof n === 'number' && isFinite(n)) ? `${fmt.bytes(n)}/s` : '—' }
 }
 
 const state = reactive({
   os: '—', browser: '—', arch: '—', time: '—', lang: '—', online: navigator.onLine,
   cores: '—', deviceMemory: '—', heapUsed: '—', heapTotal: '—', eventLoopLag: '—', fps: '—',
   batteryLevel: '—', batteryCharging: '—', batteryChargingTime: '—', batteryDischargingTime: '—',
-  netType: '—', netDownlink: '—', netRtt: '—', netSaveData: false,
+  netType: '—', netDownlink: null, netRtt: null, netSaveData: false,
   gpu: '—', gpuVendor: '—', webgl: '—',
   storageQuota: '—', storageUsage: '—', storagePersisted: '—',
   screenRes: '—', pixelRatio: '—', colorDepth: '—',
-  agentStatus: '—', agentCpuLoad: '—', agentCpuTemp: '—', agentFanRpm: '—', agentMem: '—', agentSwap: '—', agentDisk: '—', agentGpuTemp: '—', agentBatteryCycles: '—',
+  agentStatus: '—', agentCpuLoad: '—', agentCpuTemp: '—', agentFanRpm: '—', agentMem: '—', agentSwap: '—', agentDisk: '—', agentGpuTemp: '—', agentBatteryCycles: '—', agentNet: '—',
 })
 
 let intervals = []
@@ -262,10 +264,10 @@ async function fillBattery(){
 function fillNetwork(){
   const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection
   function render(){
-    if(!conn){ state.netType='—'; state.netDownlink='—'; state.netRtt='—'; state.netSaveData=false; return }
+    if(!conn){ state.netType='—'; state.netDownlink=null; state.netRtt=null; state.netSaveData=false; return }
     state.netType = conn.effectiveType || conn.type || '—'
-    state.netDownlink = conn.downlink != null ? conn.downlink.toFixed(2) : '—'
-    state.netRtt = conn.rtt != null ? String(conn.rtt) : '—'
+    state.netDownlink = (typeof conn.downlink === 'number' && isFinite(conn.downlink)) ? conn.downlink : null
+    state.netRtt = (typeof conn.rtt === 'number' && isFinite(conn.rtt)) ? conn.rtt : null
     state.netSaveData = !!conn.saveData
   }
   render(); conn && conn.addEventListener('change', render)
@@ -447,6 +449,17 @@ async function fillAgent(){
         // Not available from Glances default payload in many setups
         state.agentFanRpm = '—'
         state.agentBatteryCycles = '—'
+
+        // Network (agent) best-effort: pick primary interface (not loopback), show rx/tx current rate
+        const ifs = Array.isArray(g?.network) ? g.network : []
+        const nic = ifs.find(i => i?.is_up && i?.interface_name !== 'lo') || ifs.find(i => i?.is_up) || ifs[0]
+        if (nic) {
+          const rx = (typeof nic.rx === 'number') ? nic.rx : null
+          const tx = (typeof nic.tx === 'number') ? nic.tx : null
+          state.agentNet = `${nic.interface_name}: ${fmt.rate(rx)} ↓ · ${fmt.rate(tx)} ↑`
+        } else {
+          state.agentNet = '—'
+        }
       }catch{
         state.agentStatus = 'Indisponível'
       }
@@ -476,6 +489,7 @@ function buildSnapshot(){
       mem: state.agentMem,
       swap: state.agentSwap,
       disk: state.agentDisk,
+      net: state.agentNet,
       gpu: { temp: state.agentGpuTemp },
       battery: { cycles: state.agentBatteryCycles }
     }
