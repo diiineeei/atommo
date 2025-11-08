@@ -7,11 +7,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Atommo Desktop Health</title>
   <script>
-    window.APP_CONFIG = {
-      apiBaseUrl: 'https://app-atommo-990926851328.us-central1.run.app', // backend local em dev
-      // Use '/glances' em dev para passar pelo proxy do Vite sem CORS
-      agentBaseUrl: '/glances' // ex. direto: http://localhost:11420 ou http://localhost:61208
-    };
+    // Configuração de ambiente do app
+    // Em desenvolvimento, use '/glances' para passar pelo proxy do Vite.
+    // Em produção (site hospedado), tente falar direto com o agente local do usuário
+    // (ex.: Glances em http://localhost:61208 ou agente custom em http://localhost:11420).
+    (function(){
+      var isLocalHost = ['localhost','127.0.0.1'].includes(location.hostname)
+      var config = {
+        apiBaseUrl: 'https://app-atommo-990926851328.us-central1.run.app'
+      }
+      // Permite override prévio (caso APP_CONFIG já exista via outro script)
+      if (window.APP_CONFIG && typeof window.APP_CONFIG === 'object') {
+        for (var k in window.APP_CONFIG) { try { config[k] = window.APP_CONFIG[k] } catch(_){} }
+      }
+      // Define agentBaseUrl conforme ambiente
+      if (typeof config.agentBaseUrl !== 'string' || !config.agentBaseUrl) {
+        config.agentBaseUrl = isLocalHost ? '/glances' : 'http://localhost:61208'
+      }
+      window.APP_CONFIG = config
+    })();
   </script>
   
 </head>

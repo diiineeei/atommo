@@ -310,72 +310,34 @@ function fillScreen(){
 }
 
 async function fillAgent(){
-  const base = (window.APP_CONFIG && window.APP_CONFIG.agentBaseUrl) || ''
-  if(!base){ state.agentStatus = 'Não configurado'; return }
-  const baseClean = base.replace(/\/$/,'')
-  const looksLikeGlances = /(?:(^|\/)glances\/?$)|(?:\b61208\b)/.test(baseClean)
-  async function poll(){
-    // Se for claramente um proxy do Glances (ex.: "/glances") ou porta 61208, vá direto no endpoint do Glances
-    if (looksLikeGlances) {
+  const configuredBase = (window.APP_CONFIG && window.APP_CONFIG.agentBaseUrl) || (import.meta.env.VITE_AGENT_BASE_URL || '')
+  const baseClean = String(configuredBase || '').replace(/\/$/,'')
+  if(!baseClean){ state.agentStatus = 'Não configurado'; return }
+
+  const isAbsolute = /^https?:\/\//i.test(baseClean)
+  const isRelative = baseClean.startsWith('/')
+  const inDev = !!(import.meta && import.meta.env && import.meta.env.DEV)
+
+  async function tryFetchJson(urls){
+    for (const url of urls){
       try{
-        const r2 = await fetch('http://localhost:61208/api/3/all', { cache: 'no-store' })
-        if(!r2.ok) throw new Error('HTTP '+r2.status)
-        const g = await r2.json()
-        state.agentStatus = 'Conectado (Glances)'
-
-        // CPU load
-        const cpuLoad = g?.cpu?.total ?? g?.quicklook?.cpu
-        state.agentCpuLoad = cpuLoad != null ? fmt.percent(Number(cpuLoad)) : '—'
-
-        // Memory
-        const memUsed = g?.mem?.used
-        const memTotal = g?.mem?.total
-        state.agentMem = (memUsed != null && memTotal != null) ? `${fmt.bytes(memUsed)} / ${fmt.bytes(memTotal)}` : '—'
-
-        // Swap
-        const swapUsed = g?.memswap?.used
-        const swapTotal = g?.memswap?.total
-        state.agentSwap = (swapUsed != null && swapTotal != null) ? `${fmt.bytes(swapUsed)} / ${fmt.bytes(swapTotal)}` : '—'
-
-        // Disk (prefer root mountpoint '/')
-        const fsList = Array.isArray(g?.fs) ? g.fs : []
-        const rootFs = fsList.find(d => d?.mnt_point === '/') || fsList[0]
-        state.agentDisk = (rootFs?.used != null && rootFs?.size != null) ? `${fmt.bytes(rootFs.used)} / ${fmt.bytes(rootFs.size)}` : '—'
-
-        // CPU temperature from sensors (best-effort)
-        const sensors = Array.isArray(g?.sensors) ? g.sensors : []
-        const tempSensors = sensors.filter(s => (s?.type || '').toLowerCase().includes('temp'))
-        const pickCpuTemp = () => {
-          const priority = ['Tctl','Package id 0','Tdie','Tccd1','edge']
-          for (const name of priority) {
-            const s = tempSensors.find(x => x?.label === name)
-            if (s?.value != null) return Number(s.value)
-          }
-          if (tempSensors.length) {
-            const max = Math.max(...tempSensors.map(x => Number(x?.value) || -Infinity))
-            return Number.isFinite(max) ? max : undefined
-          }
-          return undefined
-        }
-        const cpuTemp = pickCpuTemp()
-        state.agentCpuTemp = cpuTemp != null ? `${cpuTemp.toFixed(0)} °C` : '—'
-
-        // GPU temperature if available (Glances GPU plugin)
-        const gpuTemp = Array.isArray(g?.gpu) && g.gpu[0]?.temperature != null ? Number(g.gpu[0].temperature) : undefined
-        state.agentGpuTemp = gpuTemp != null ? `${gpuTemp.toFixed(0)} °C` : '—'
-
-        // Not available from Glances default payload in many setups
-        state.agentFanRpm = '—'
-        state.agentBatteryCycles = '—'
-        return
-      }catch{
-        state.agentStatus = 'Indisponível'; return
-      }
+        const res = await fetch(url, { cache: 'no-store' })
+        if (!res.ok) throw new Error('HTTP '+res.status)
+        return await res.json()
+      }catch(_e){ /* try next */ }
     }
+    throw new Error('all_failed')
+  }
+
+  async function poll(){
+    // 1) Tentar agente custom (\"/health\") se apontado para um host absoluto (ex.: http://localhost:11420)
+    const healthUrls = []
+    if (isAbsolute) healthUrls.push(baseClean + '/health')
+    // fallback comum para agente local custom
+    healthUrls.push('http://localhost:11420/health')
+
     try{
-      const res = await fetch(base.replace(/\/$/,'') + '/health', { cache: 'no-store' })
-      if(!res.ok) throw new Error('HTTP '+res.status)
-      const j = await res.json()
+      const j = await tryFetchJson(healthUrls)
       const cpuLoad = j?.cpu?.load ?? j?.cpuLoad ?? j?.cpu?.percent
       const cpuTemp = j?.cpu?.temp ?? j?.cpuTemp
       const fanRpm = j?.cpu?.fanRpm ?? j?.fanRpm
@@ -397,72 +359,73 @@ async function fillAgent(){
       state.agentDisk = (diskUsed != null && diskTotal != null) ? `${fmt.bytes(diskUsed)} / ${fmt.bytes(diskTotal)}` : '—'
       state.agentGpuTemp = gpuTemp != null ? `${Number(gpuTemp).toFixed(0)} °C` : '—'
       state.agentBatteryCycles = batteryCycles != null ? String(batteryCycles) : '—'
-    }catch{
-      // Fallback Glances
-      try{
-        const r2 = await fetch(base.replace(/\/$/,'') + '/api/3/all', { cache: 'no-store' })
-        if(!r2.ok) throw new Error('HTTP '+r2.status)
-        const g = await r2.json()
-        state.agentStatus = 'Conectado (Glances)'
+      return
+    }catch(_e){ /* tenta Glances abaixo */ }
 
-        // CPU load
-        const cpuLoad = g?.cpu?.total ?? g?.quicklook?.cpu
-        state.agentCpuLoad = cpuLoad != null ? fmt.percent(Number(cpuLoad)) : '—'
+    // 2) Tentar Glances
+    const glancesUrls = []
+    // se base informado for absoluto (ex.: http://localhost:61208 ou http://host/glances)
+    if (isAbsolute) glancesUrls.push(baseClean + '/api/3/all')
+    // se for relativo e estamos em dev, usamos o proxy do Vite (ex.: '/glances')
+    if (isRelative && inDev) glancesUrls.push(baseClean + '/api/3/all')
+    // tentativas diretas no host local
+    glancesUrls.push('http://localhost:61208/api/3/all','http://127.0.0.1:61208/api/3/all')
 
-        // Memory
-        const memUsed = g?.mem?.used
-        const memTotal = g?.mem?.total
-        state.agentMem = (memUsed != null && memTotal != null) ? `${fmt.bytes(memUsed)} / ${fmt.bytes(memTotal)}` : '—'
-
-        // Swap
-        const swapUsed = g?.memswap?.used
-        const swapTotal = g?.memswap?.total
-        state.agentSwap = (swapUsed != null && swapTotal != null) ? `${fmt.bytes(swapUsed)} / ${fmt.bytes(swapTotal)}` : '—'
-
-        // Disk (prefer root mountpoint '/')
-        const fsList = Array.isArray(g?.fs) ? g.fs : []
-        const rootFs = fsList.find(d => d?.mnt_point === '/') || fsList[0]
-        state.agentDisk = (rootFs?.used != null && rootFs?.size != null) ? `${fmt.bytes(rootFs.used)} / ${fmt.bytes(rootFs.size)}` : '—'
-
-        // CPU temperature from sensors (best-effort)
-        const sensors = Array.isArray(g?.sensors) ? g.sensors : []
-        const tempSensors = sensors.filter(s => (s?.type || '').toLowerCase().includes('temp'))
-        const pickCpuTemp = () => {
-          const priority = ['Tctl','Package id 0','Tdie','Tccd1','edge']
-          for (const name of priority) {
-            const s = tempSensors.find(x => x?.label === name)
-            if (s?.value != null) return Number(s.value)
-          }
-          if (tempSensors.length) {
-            const max = Math.max(...tempSensors.map(x => Number(x?.value) || -Infinity))
-            return Number.isFinite(max) ? max : undefined
-          }
-          return undefined
+    try{
+      const g = await tryFetchJson(glancesUrls)
+      state.agentStatus = 'Conectado (Glances)'
+      // CPU load
+      const cpuLoad = g?.cpu?.total ?? g?.quicklook?.cpu
+      state.agentCpuLoad = cpuLoad != null ? fmt.percent(Number(cpuLoad)) : '—'
+      // Memory
+      const memUsed = g?.mem?.used
+      const memTotal = g?.mem?.total
+      state.agentMem = (memUsed != null && memTotal != null) ? `${fmt.bytes(memUsed)} / ${fmt.bytes(memTotal)}` : '—'
+      // Swap
+      const swapUsed = g?.memswap?.used
+      const swapTotal = g?.memswap?.total
+      state.agentSwap = (swapUsed != null && swapTotal != null) ? `${fmt.bytes(swapUsed)} / ${fmt.bytes(swapTotal)}` : '—'
+      // Disk (prefer root mountpoint '/')
+      const fsList = Array.isArray(g?.fs) ? g.fs : []
+      const rootFs = fsList.find(d => d?.mnt_point === '/') || fsList[0]
+      state.agentDisk = (rootFs?.used != null && rootFs?.size != null) ? `${fmt.bytes(rootFs.used)} / ${fmt.bytes(rootFs.size)}` : '—'
+      // CPU temperature from sensors (best-effort)
+      const sensors = Array.isArray(g?.sensors) ? g.sensors : []
+      const tempSensors = sensors.filter(s => (s?.type || '').toLowerCase().includes('temp'))
+      const pickCpuTemp = () => {
+        const priority = ['Tctl','Package id 0','Tdie','Tccd1','edge']
+        for (const name of priority) {
+          const s = tempSensors.find(x => x?.label === name)
+          if (s?.value != null) return Number(s.value)
         }
-        const cpuTemp = pickCpuTemp()
-        state.agentCpuTemp = cpuTemp != null ? `${cpuTemp.toFixed(0)} °C` : '—'
-
-        // GPU temperature if available (Glances GPU plugin)
-        const gpuTemp = Array.isArray(g?.gpu) && g.gpu[0]?.temperature != null ? Number(g.gpu[0].temperature) : undefined
-        state.agentGpuTemp = gpuTemp != null ? `${gpuTemp.toFixed(0)} °C` : '—'
-
-        // Not available from Glances default payload in many setups
-        state.agentFanRpm = '—'
-        state.agentBatteryCycles = '—'
-
-        // Network (agent) best-effort: pick primary interface (not loopback), show rx/tx current rate
-        const ifs = Array.isArray(g?.network) ? g.network : []
-        const nic = ifs.find(i => i?.is_up && i?.interface_name !== 'lo') || ifs.find(i => i?.is_up) || ifs[0]
-        if (nic) {
-          const rx = (typeof nic.rx === 'number') ? nic.rx : null
-          const tx = (typeof nic.tx === 'number') ? nic.tx : null
-          state.agentNet = `${nic.interface_name}: ${fmt.rate(rx)} ↓ · ${fmt.rate(tx)} ↑`
-        } else {
-          state.agentNet = '—'
+        if (tempSensors.length) {
+          const max = Math.max(...tempSensors.map(x => Number(x?.value) || -Infinity))
+          return Number.isFinite(max) ? max : undefined
         }
-      }catch{
-        state.agentStatus = 'Indisponível'
+        return undefined
       }
+      const cpuTemp = pickCpuTemp()
+      state.agentCpuTemp = cpuTemp != null ? `${cpuTemp.toFixed(0)} °C` : '—'
+      // GPU temperature if available (Glances GPU plugin)
+      const gpuTemp = Array.isArray(g?.gpu) && g.gpu[0]?.temperature != null ? Number(g.gpu[0].temperature) : undefined
+      state.agentGpuTemp = gpuTemp != null ? `${gpuTemp.toFixed(0)} °C` : '—'
+      // Not available from Glances default payload in many setups
+      state.agentFanRpm = '—'
+      state.agentBatteryCycles = '—'
+
+      // Network (agent) best-effort
+      const ifs = Array.isArray(g?.network) ? g.network : []
+      const nic = ifs.find(i => i?.is_up && i?.interface_name !== 'lo') || ifs.find(i => i?.is_up) || ifs[0]
+      if (nic) {
+        const rx = (typeof nic.rx === 'number') ? nic.rx : null
+        const tx = (typeof nic.tx === 'number') ? nic.tx : null
+        state.agentNet = `${nic.interface_name}: ${fmt.rate(rx)} ↓ · ${fmt.rate(tx)} ↑`
+      } else {
+        state.agentNet = '—'
+      }
+      return
+    }catch(_e){
+      state.agentStatus = 'Indisponível'
     }
   }
   await poll(); intervals.push(setInterval(poll, 5000))
