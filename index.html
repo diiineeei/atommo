@@ -20,9 +20,18 @@
       if (window.APP_CONFIG && typeof window.APP_CONFIG === 'object') {
         for (var k in window.APP_CONFIG) { try { config[k] = window.APP_CONFIG[k] } catch(_){} }
       }
-      // Define agentBaseUrl conforme ambiente
-      if (typeof config.agentBaseUrl !== 'string' || !config.agentBaseUrl) {
-        config.agentBaseUrl = isLocalHost ? '/glances' : 'http://localhost:61208'
+      // Define/ajusta agentBaseUrl conforme ambiente
+      // - Em localhost: usar '/glances' para passar pelo proxy do Vite
+      // - Em produção: sempre preferir localhost real (Glances) e evitar caminhos relativos
+      if (isLocalHost) {
+        if (typeof config.agentBaseUrl !== 'string' || !config.agentBaseUrl) {
+          config.agentBaseUrl = '/glances'
+        }
+      } else {
+        // Se vier vazio ou relativo (ex.: '/glances'), forçamos localhost:61208
+        if (typeof config.agentBaseUrl !== 'string' || !config.agentBaseUrl || config.agentBaseUrl.startsWith('/')) {
+          config.agentBaseUrl = 'http://localhost:61208'
+        }
       }
       window.APP_CONFIG = config
     })();
